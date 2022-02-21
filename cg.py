@@ -77,7 +77,8 @@ def render_submissions(db, num, show_info):
                 target ,= target
                 entries += f"impersonating {target}<br>"
             likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
-            entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
+            if num >= 13:
+                entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
             entries += "<details><summary><strong>guesses</strong></summary><ul>"
             for guesser, guess in db.execute("SELECT People1.name, People2.name FROM Guesses "
                                              "INNER JOIN People AS People1 ON People1.id = Guesses.player_id "
@@ -172,7 +173,8 @@ def show_round(num):
                     current = idx
                     last = key(t)
                 name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
-                results += f'<li value="{current}"><details><summary><strong>{name}</strong> +{plus} ~{bonus} -{minus} = {plus+bonus-minus}</summary><ol>'
+                bonus_s = f" ~{bonus}"*(num >= 12)
+                results += f'<li value="{current}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
                 for guess, actual in db.execute("SELECT People1.name, People2.name FROM Guesses "
                                                 "INNER JOIN People AS People1 ON People1.id = Guesses.guess "
                                                 "INNER JOIN People AS People2 ON People2.id = Guesses.actual "
