@@ -1,4 +1,5 @@
 import functools
+import traceback
 import sqlite3
 import datetime
 import io
@@ -8,7 +9,7 @@ import flask
 import flask_discord
 from flask_discord import requires_authorization as auth
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name
+from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
 from pygments.lexers.special import TextLexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
@@ -108,14 +109,31 @@ def render_submissions(db, num, show_info):
                 entries += "</details>"
     return entries, formatter.get_style_defs(".code")
 
+LANGUAGES = ["py", "rs", "bf", "hs", "png", "text"]
+
 @app.route("/<int:num>/")
 def show_round(num):
     db = get_db()
-    cur = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,))
-    if not (rnd := cur.fetchone()):
+    rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
+    if not rnd:
         flask.abort(404)
     match rnd["stage"]:
         case 1:
+            langs = ""
+            if discord.authorized:
+                langs += '<h2>review</h2><form method="post"><input type="hidden" name="type" value="langs">'
+                user = discord.fetch_user()
+                keep_langs = False
+                for name, lang in db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id)):
+                    keep_langs = True
+                    langs += f'<label for="{name}">{name}</label> <select name="{name}" id="{name}">'
+                    for language in LANGUAGES:
+                        selected = " selected"*(language == lang)
+                        langs += f'<option value="{language}"{selected}>{language}</option>'
+                    langs += "</select><br>"
+                langs += '<input type="submit" value="change languages"></form>'
+                if not keep_langs:
+                    langs = ""
             return f"""
 <!DOCTYPE html>
 <html>
@@ -128,11 +146,24 @@ def show_round(num):
     <p>started at {rnd['started_at']}. submit by {rnd['started_at']+datetime.timedelta(days=7)}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
+    <h2>submit</h2>
+    <p>{'<br>'.join(flask.get_flashed_messages())}</p>
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="type" value="upload">
+      <label for="files">upload one or more files</label>
+      <input type="file" id="files" name="files" multiple><br>
+      <input type="submit" value="submit">
+    </form>
+    {langs}
   </body>
 </html>
 """
         case 2:
             entries, style = render_submissions(db, num, False)
+            players = "<ul>"
+            for name, in db.execute("SELECT People.name FROM Submissions INNER JOIN People ON People.id = Submissions.author_id WHERE round_num = ? ORDER BY People.name", (num,)):
+                players += f"<li>{name}</li>"
+            players += "</ul>"
             return f"""
 <!DOCTYPE html>
 <html>
@@ -146,6 +177,8 @@ def show_round(num):
     <p>started at {rnd['started_at']}; stage 2 since {rnd['stage2_at']}. guess by {rnd['stage2_at']+datetime.timedelta(days=7)}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
+    <h2>players</h2>
+    {players}
     {entries}
   </body>
 </html>
@@ -205,6 +238,47 @@ def show_round(num):
   </body>
 </html>
 """
+
+@app.route("/<int:num>/", methods=["POST"])
+@auth
+def take(num):
+    db = get_db()
+    rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
+    if not rnd:
+        flask.abort(404)
+    user = discord.fetch_user()
+    if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}"):
+        flask.abort(403)
+    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
+    try:
+        match (flask.request.form["type"], rnd["stage"]):
+            case ("upload", 1):
+                files = [x for x in flask.request.files.getlist("files") if x]
+                if not files:
+                    return flask.flash("submit at least one file")
+                db.execute("INSERT OR REPLACE INTO Submissions VALUES (?, ?, ?, NULL)", (user.id, num, datetime.datetime.now(datetime.timezone.utc)))
+                db.execute("DELETE FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id))
+                for file in files:
+                    try:
+                        guess = min(get_lexer_for_filename(file.filename).aliases, key=len)
+                    except ClassNotFound:
+                        guess = "text"
+                    db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, file.read(), guess))
+            case ("langs", 1):
+                for key, value in flask.request.form.items():
+                    if key != "type":
+                        db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
+            case 2:
+                pass
+            case _:
+                flask.abort(400)
+    except Exception as e:
+        traceback.print_exception(e)
+    else:
+        flask.flash("submitted successfully")
+        db.commit()
+    finally:
+        return flask.redirect(flask.url_for("show_round", num=num))
 
 @app.route("/callback")
 def callback():
