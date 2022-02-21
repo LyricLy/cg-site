@@ -3,6 +3,7 @@ import traceback
 import sqlite3
 import datetime
 import io
+import os
 
 import mistune
 import flask
@@ -19,7 +20,11 @@ import config
 
 app = flask.Flask(__name__)
 app.secret_key = config.secret_key
-discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, "http://localhost:7000/callback", config.bot_token)
+if "OAUTHLIB_INSECURE_TRANSPORT" in os.environ:
+    callback = "http://localhost:7000/callback"
+else:
+    callback = "https://cg.esolangs.gay/callback"
+discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, callback, config.bot_token)
 
 
 def get_db():
