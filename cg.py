@@ -21,10 +21,10 @@ import config
 app = flask.Flask(__name__)
 app.secret_key = config.secret_key
 if "OAUTHLIB_INSECURE_TRANSPORT" in os.environ:
-    callback = "http://localhost:7000/callback"
+    cb_url = "http://127.0.0.1:7000/callback"
 else:
-    callback = "https://cg.esolangs.gay/callback"
-discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, callback, config.bot_token)
+    cb_url = "https://cg.esolangs.gay/callback"
+discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, cb_url, config.bot_token)
 
 
 def get_db():
@@ -124,21 +124,28 @@ def show_round(num):
         flask.abort(404)
     match rnd["stage"]:
         case 1:
-            langs = ""
             if discord.authorized:
-                langs += '<h2>review</h2><form method="post"><input type="hidden" name="type" value="langs">'
+                panel = """
+<form method="post" enctype="multipart/form-data">
+  <input type="hidden" name="type" value="upload">
+  <label for="files">upload one or more files</label>
+  <input type="file" id="files" name="files" multiple><br>
+  <input type="submit" value="submit">
+</form>
+"""
                 user = discord.fetch_user()
-                keep_langs = False
-                for name, lang in db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id)):
-                    keep_langs = True
-                    langs += f'<label for="{name}">{name}</label> <select name="{name}" id="{name}">'
-                    for language in LANGUAGES:
-                        selected = " selected"*(language == lang)
-                        langs += f'<option value="{language}"{selected}>{language}</option>'
-                    langs += "</select><br>"
-                langs += '<input type="submit" value="change languages"></form>'
-                if not keep_langs:
-                    langs = ""
+                langs = db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id)).fetchall()
+                if langs:
+                    panel += '<h2>review</h2><form method="post"><input type="hidden" name="type" value="langs">'
+                    for name, lang in langs:
+                        panel += f'<label for="{name}">{name}</label> <select name="{name}" id="{name}">'
+                        for language in LANGUAGES:
+                            selected = " selected"*(language == lang)
+                            panel += f'<option value="{language}"{selected}>{language}</option>'
+                        panel += "</select><br>"
+                    panel += '<input type="submit" value="change languages"></form>'
+            else:
+                panel = '<form method="get" action="/login"><input type="submit" value="Login with Discord"></form>'
             return f"""
 <!DOCTYPE html>
 <html>
@@ -153,13 +160,7 @@ def show_round(num):
     {mistune.html(rnd['spec'])}
     <h2>submit</h2>
     <p>{'<br>'.join(flask.get_flashed_messages())}</p>
-    <form method="post" enctype="multipart/form-data">
-      <input type="hidden" name="type" value="upload">
-      <label for="files">upload one or more files</label>
-      <input type="file" id="files" name="files" multiple><br>
-      <input type="submit" value="submit">
-    </form>
-    {langs}
+    {panel}
   </body>
 </html>
 """
@@ -290,8 +291,8 @@ def callback():
     discord.callback()
     return flask.redirect(flask.url_for("root"))
 
-@app.errorhandler(flask_discord.Unauthorized)
-def redirect_unauthorized(e):
+@app.route("/login")
+def login():
     return discord.create_session(["identify"])
 
 @app.errorhandler(404)
