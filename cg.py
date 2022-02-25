@@ -59,7 +59,9 @@ def index():
 
 @app.route("/<int:num>/<name>")
 def download_file(num, name):
-    f = get_db().execute("SELECT content FROM Files WHERE round_num = ? AND name = ?", (num, name)).fetchone()
+    user_id = discord.fetch_user().id if discord.authorized else None
+    f = get_db().execute("SELECT Files.content FROM Files INNER JOIN Rounds ON Rounds.num = Files.round_num "
+                         "WHERE Files.round_num = ? AND Files.name = ? AND (Rounds.stage <> 1 OR Files.author_id = ?)", (num, name, user_id)).fetchone()
     if not f:
         flask.abort(404)
     return flask.send_file(io.BytesIO(f[0]), as_attachment=True, download_name=name)
@@ -109,6 +111,8 @@ def render_submissions(db, num, show_info):
                 if lang.startswith("iframe"):
                     url = "/files/" + lang.removeprefix("iframe ")
                     entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
+                elif lang == "png":
+                    entries += f'<img src="/{num}/{name}">'
                 else:
                     entries += highlight(content, get_lexer_by_name(lang), formatter)
                 entries += "</details>"
@@ -268,7 +272,7 @@ def take(num):
                     try:
                         guess = min(get_lexer_for_filename(file.filename).aliases, key=len)
                     except ClassNotFound:
-                        guess = "text"
+                        guess = "png" if file.filename.endswith(".png") else "text"
                     db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, file.read(), guess))
             case ("langs", 1):
                 for key, value in flask.request.form.items():
