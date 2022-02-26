@@ -142,7 +142,7 @@ def show_round(num):
                 if langs:
                     panel += '<h2>review</h2><form method="post"><input type="hidden" name="type" value="langs">'
                     for name, lang in langs:
-                        panel += f'<label for="{name}">{name}</label> <select name="{name}" id="{name}">'
+                        panel += f'<label for="{name}"><a href="/{num}/{name}">{name}</a></label> <select name="{name}" id="{name}">'
                         for language in LANGUAGES:
                             selected = " selected"*(language == lang)
                             panel += f'<option value="{language}"{selected}>{language}</option>'
