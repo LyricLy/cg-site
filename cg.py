@@ -159,7 +159,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
-    <p>started at {rnd['started_at']}. submit by {rnd['started_at']+datetime.timedelta(days=7)}</p>
+    <p>started at {rnd['started_at']}. submit by {rnd['started_at']+datetime.timedelta(days=7)} (all times are in UTC)</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>submit</h2>
@@ -184,7 +184,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
-    <p>started at {rnd['started_at']}; stage 2 since {rnd['stage2_at']}. guess by {rnd['stage2_at']+datetime.timedelta(days=7)}</p>
+    <p>started at {rnd['started_at']}; stage 2 since {rnd['stage2_at']}. guess by {rnd['stage2_at']+datetime.timedelta(days=7)} (all times are in UTC)</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>players</h2>
@@ -239,7 +239,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num} (completed)</h1>
-    <p>started at {rnd['started_at']}; stage 2 at {rnd['stage2_at']}; ended at {rnd['ended_at']}</p>
+    <p>started at {rnd['started_at']}; stage 2 at {rnd['stage2_at']}; ended at {rnd['ended_at']} (all times are in UTC)</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>results</h2>
