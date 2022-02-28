@@ -242,7 +242,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
-    <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(rnd['stage2_at']+datetime.timedelta(days=7))}</p>
+    <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(rnd['stage2_at']+datetime.timedelta(days=4))}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     {panel}
