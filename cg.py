@@ -51,7 +51,7 @@ def close_connection(exception):
 
 @app.route("/")
 def root():
-    cur = get_db().execute("SELECT MAX(num) FROM Rounds WHERE stage <> 3")
+    cur = get_db().execute("SELECT MIN(num) FROM Rounds WHERE stage <> 3")
     if r := cur.fetchone()[0]:
         return flask.redirect(flask.url_for("show_round", num=r))
     else:
@@ -74,9 +74,12 @@ def download_file(num, name):
 def download_file_available_for_public_access(name):
     return flask.send_from_directory("./files/", name)
 
+@app.route("/main.js")
+def js():
+    return flask.send_file("./main.js")
+
 def format_time(dt):
-    uid = uuid.uuid4()
-    return f'<span id="{uid}">{dt}</span><script>document.getElementById("{uid}").innerHTML = new Date("{dt}").toLocaleString()</script>'
+    return f'<span class="datetime">{dt}</span>'
 
 def render_submissions(db, num, show_info):
     formatter = HtmlFormatter(style="monokai", linenos=True)
@@ -178,10 +181,40 @@ def show_round(num):
 """
         case 2:
             entries, style = render_submissions(db, num, False)
-            players = "<ul>"
-            for name, in db.execute("SELECT People.name FROM Submissions INNER JOIN People ON People.id = Submissions.author_id WHERE round_num = ? ORDER BY People.name", (num,)):
-                players += f"<li>{name}</li>"
-            players += "</ul>"
+            query = db.execute("SELECT People.id, People.name, Submissions.position FROM Submissions INNER JOIN People ON People.id = Submissions.author_id WHERE round_num = ? ORDER BY People.name", (num,)).fetchall()
+            if discord.authorized and (your_id := discord.fetch_user().id) and any(id == your_id for id, _, _ in query):
+                panel = '<h2>guess</h2><ol id="players">'
+                for idx, (id, name, pos) in enumerate(query):
+                    if id == your_id:
+                        query.pop(idx)
+                        query.insert(pos-1, (id, name, pos))
+                        break
+                for id, name, _ in query:
+                    you = ' you' * (id == your_id)
+                    panel += f'<li data-id="{id}" class="player{you}">↕ {name}</li>'
+                panel += "</ol>"
+                targets = ""
+                for id, name, _ in query:
+                    if id != your_id:
+                        targets += f'<option value="{id}">{name}</option>'
+                panel += f"""
+<form method="post" id="theform">
+  <input type="hidden" name="type" value="data">
+  <label for="target">impersonating</label>
+  <select name="target" id="target">{targets}</select>
+  <label><em><small>you'll get an extra point for everyone that guesses you as this person</em></small></label>
+  <p>you can't submit yet. sorry!</p>
+</form>
+"""
+            else:
+                panel = '<h2>players</h2><ol>'
+                for _, name, _ in query:
+                    panel += f'<li>{name}</li>'
+                panel += "</ol>"
+                if not discord.authorized:
+                    panel += '<form method="get" action="/login"><input type="submit" value="Login with Discord"></form>'
+                else:
+                    panel += "<p>you weren't a part of this round. come back next time?</p>"
             return f"""
 <!DOCTYPE html>
 <html>
@@ -189,14 +222,30 @@ def show_round(num):
     <meta charset=\"utf-8\">
     <title>cg #{num}/2</title>
     <style>{style}</style>
+    <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
+    <script src="/main.js" defer></script>
+    <style>
+      .highlight {{
+        color: #F7A8B8;
+      }}
+      #players {{
+        display: inline-block;
+      }}
+      .player {{
+        border: 1px solid #000;
+        padding: 10px;
+      }}
+      .you {{
+        color: #55CDFC;
+      }}
+    </style>
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(rnd['stage2_at']+datetime.timedelta(days=7))}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
-    <h2>players</h2>
-    {players}
+    {panel}
     {entries}
   </body>
 </html>
@@ -244,6 +293,7 @@ def show_round(num):
     <meta charset=\"utf-8\">
     <title>cg #{num}</title>
     <style>{style}</style>
+    <script src="/main.js"></script> 
   </head>
   <body>
     <h1>code guessing, round #{num} (completed)</h1>
@@ -286,7 +336,7 @@ def take(num):
                 for key, value in flask.request.form.items():
                     if key != "type":
                         db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
-            case 2:
+            case ("data", 2):
                 pass
             case _:
                 flask.abort(400)
@@ -309,4 +359,4 @@ def login():
 
 @app.errorhandler(404)
 def not_found(e):
-    return 'page not found :(<br><a href="/">go home</a>'
+    return 'page not found :(<br><a href="/">go home</a>', 404
