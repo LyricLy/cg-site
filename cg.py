@@ -4,6 +4,7 @@ import sqlite3
 import datetime
 import io
 import os
+import uuid
 
 import mistune
 import flask
@@ -27,6 +28,9 @@ else:
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, cb_url, config.bot_token)
 
 
+def datetime_converter(value):
+    return datetime.datetime.fromisoformat(value.decode())
+sqlite3.register_converter("timestamp", datetime_converter)
 def get_db():
     try:
         return flask.g._db
@@ -70,6 +74,10 @@ def download_file(num, name):
 def download_file_available_for_public_access(name):
     return flask.send_from_directory("./files/", name)
 
+def format_time(dt):
+    uid = uuid.uuid4()
+    return f'<span id="{uid}">{dt}</span><script>document.getElementById("{uid}").innerHTML = new Date("{dt}").toLocaleString()</script>'
+
 def render_submissions(db, num, show_info):
     formatter = HtmlFormatter(style="monokai", linenos=True)
     entries = ""
@@ -80,7 +88,7 @@ def render_submissions(db, num, show_info):
             entries += f"<p>written by {name}<br>"
             target = db.execute("SELECT People.name FROM Targets INNER JOIN People ON People.id = Targets.target WHERE Targets.round_num = ? AND Targets.player_id = ?", (num, author)).fetchone()
             if submitted_at:
-                entries += f"submitted at {submitted_at}<br>"
+                entries += f"submitted at {format_time(submitted_at)}<br>"
             if target:
                 target ,= target
                 entries += f"impersonating {target}<br>"
@@ -159,7 +167,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
-    <p>started at {rnd['started_at']}. submit by {rnd['started_at']+datetime.timedelta(days=7)} (all times are in UTC)</p>
+    <p>started at {format_time(rnd['started_at'])}. submit by {format_time(rnd['started_at'])+datetime.timedelta(days=7)}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>submit</h2>
@@ -184,7 +192,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
-    <p>started at {rnd['started_at']}; stage 2 since {rnd['stage2_at']}. guess by {rnd['stage2_at']+datetime.timedelta(days=7)} (all times are in UTC)</p>
+    <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(rnd['stage2_at']+datetime.timedelta(days=7))}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>players</h2>
@@ -239,7 +247,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num} (completed)</h1>
-    <p>started at {rnd['started_at']}; stage 2 at {rnd['stage2_at']}; ended at {rnd['ended_at']} (all times are in UTC)</p>
+    <p>started at {format_time(rnd['started_at'])}; stage 2 at {format_time(rnd['stage2_at'])}; ended at {format_time(rnd['ended_at'])}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>results</h2>
