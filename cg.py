@@ -167,7 +167,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
-    <p>started at {format_time(rnd['started_at'])}. submit by {format_time(rnd['started_at'])+datetime.timedelta(days=7)}</p>
+    <p>started at {format_time(rnd['started_at'])}. submit by {format_time(rnd['started_at']+datetime.timedelta(days=7))}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>submit</h2>
