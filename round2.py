@@ -1,11 +1,12 @@
 import sqlite3
 import random
+import datetime
 
 
 db = sqlite3.connect("the.db")
 db.row_factory = sqlite3.Row
 num, = db.execute("SELECT MIN(num) FROM Rounds WHERE stage = 1")
-db.execute("UPDATE Rounds SET stage = 2 WHERE num = ?", num)
+db.execute("UPDATE Rounds SET stage = 2, stage2_at = ? WHERE num = ?", (datetime.datetime.now(datetime.timezone.utc), *num))
 subs = db.execute("SELECT * FROM Submissions WHERE round_num = ?", num).fetchall()
 random.shuffle(subs)
 for idx, sub in enumerate(subs, start=1):
