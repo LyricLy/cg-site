@@ -21,6 +21,10 @@ import config
 
 app = flask.Flask(__name__)
 app.secret_key = config.secret_key
+app.config |= {
+    "SESSION_COOKIE_HTTPONLY": False,
+    "SESSION_COOKIE_SECURE": True,
+}
 if "OAUTHLIB_INSECURE_TRANSPORT" in os.environ:
     cb_url = "http://127.0.0.1:7000/callback"
 else:
@@ -78,6 +82,10 @@ def download_file_available_for_public_access(name):
 def js():
     return flask.send_file("./main.js")
 
+@app.route("/favicon.ico")
+def favicon():
+    return flask.send_file("./favicon.ico")
+
 def format_time(dt):
     return f'<span class="datetime">{dt}</span>'
 
@@ -114,6 +122,9 @@ def render_submissions(db, num, show_info):
                     e = ""
                 entries += f"<li>{o}{guess}{e} (by {guesser})</li>"
             entries += "</ul></details><br>"
+        elif discord.authorized:
+            checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
+            entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
         for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
             if lang is None:
                 entries += f'<p><a href="/{num}/{name}">{name}</a></p>'
@@ -181,8 +192,13 @@ def show_round(num):
 """
         case 2:
             entries, style = render_submissions(db, num, False)
-            query = db.execute("SELECT People.id, People.name, Submissions.position FROM Submissions INNER JOIN People ON People.id = Submissions.author_id WHERE round_num = ? ORDER BY People.name", (num,)).fetchall()
-            if discord.authorized and (your_id := discord.fetch_user().id) and any(id == your_id for id, _, _ in query):
+            your_id = discord.fetch_user().id if discord.authorized else None
+            query = db.execute("SELECT People.id, People.name, Submissions.position FROM Submissions "
+                               "INNER JOIN People ON People.id = Submissions.author_id "
+                               "LEFT JOIN (Guesses INNER JOIN Submissions as Submissions2 ON Submissions2.round_num = Guesses.round_num AND Guesses.actual = Submissions2.author_id) "
+                               "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
+                               "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
+            if discord.authorized and any(id == your_id for id, _, _ in query):
                 panel = '<h2>guess</h2><ol id="players">'
                 for idx, (id, name, pos) in enumerate(query):
                     if id == your_id:
@@ -190,21 +206,22 @@ def show_round(num):
                         query.insert(pos-1, (id, name, pos))
                         break
                 for id, name, _ in query:
-                    you = ' you' * (id == your_id)
-                    panel += f'<li data-id="{id}" class="player{you}">↕ {name}</li>'
-                panel += "</ol>"
+                    if id == your_id:
+                        panel += f'<li class="player you">{name} (you!)</li>'
+                    else:
+                        panel += f'<li data-id="{id}" class="player">↕ {name}</li>'
+                panel += "</ol><br>"
                 targets = ""
+                query.sort(key=lambda q: q[1].lower())
+                target, = db.execute("SELECT target FROM Targets WHERE round_num = ? AND player_id = ?", (num, your_id)).fetchone() or [None]
                 for id, name, _ in query:
                     if id != your_id:
-                        targets += f'<option value="{id}">{name}</option>'
+                        selected = " selected"*(id==target)
+                        targets += f'<option value="{id}"{selected}>{name}</option>'
                 panel += f"""
-<form method="post" id="theform">
-  <input type="hidden" name="type" value="data">
   <label for="target">impersonating</label>
-  <select name="target" id="target">{targets}</select>
-  <label><em><small>you'll get an extra point for everyone that guesses you as this person</em></small></label>
-  <p>you can't submit yet. sorry!</p>
-</form>
+  <select id="target">{targets}</select>
+  <em><small>you'll get an extra point for everyone that guesses you as this person</em></small>
 """
             else:
                 panel = '<h2>players</h2><ol>'
@@ -315,11 +332,12 @@ def take(num):
     if not rnd:
         flask.abort(404)
     user = discord.fetch_user()
+    form = flask.request.form
     if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}"):
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
     try:
-        match (flask.request.form["type"], rnd["stage"]):
+        match (form["type"], rnd["stage"]):
             case ("upload", 1):
                 files = [x for x in flask.request.files.getlist("files") if x]
                 if not files:
@@ -333,11 +351,21 @@ def take(num):
                         guess = "png" if file.filename.endswith(".png") else "text"
                     db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, file.read(), guess))
             case ("langs", 1):
-                for key, value in flask.request.form.items():
+                for key, value in form.items():
                     if key != "type":
                         db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
-            case ("data", 2):
-                pass
+            case ("guess", 2):
+                db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
+                for position, guess in enumerate(form.getlist("guess"), start=1):
+                    db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
+            case ("target", 2):
+                db.execute("INSERT OR REPLACE INTO Targets VALUES (?, ?, ?)", (num, user.id, int(form["target"])))
+            case ("like", 2):
+                id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(form["position"]))).fetchone()
+                if form["checked"] == "true":
+                    db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, id))
+                else:
+                    db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id))
             case _:
                 flask.abort(400)
     except Exception as e:
