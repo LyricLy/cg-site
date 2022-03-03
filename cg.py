@@ -82,9 +82,9 @@ def download_file_available_for_public_access(name):
 def js():
     return flask.send_file("./main.js")
 
-@app.route("/favicon.ico")
+@app.route("/favicon.png")
 def favicon():
-    return flask.send_file("./favicon.ico")
+    return flask.send_file("./favicon.png")
 
 def format_time(dt):
     return f'<span class="datetime">{dt}</span>'
@@ -142,9 +142,10 @@ def render_submissions(db, num, show_info):
 
 LANGUAGES = ["py", "rs", "bf", "hs", "png", "text"]
 META = """
+<link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
 <meta content="website" property="og:type">
-<meta content="https://cg.esolangs.gay/favicon.ico" property="og:image">
+<meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
 """
 
