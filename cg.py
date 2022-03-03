@@ -357,7 +357,8 @@ def take(num):
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
                 for position, guess in enumerate(form.getlist("guess"), start=1):
-                    db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
+                    if int(guess) != user.id:
+                        db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
             case ("target", 2):
                 db.execute("INSERT OR REPLACE INTO Targets VALUES (?, ?, ?)", (num, user.id, int(form["target"])))
             case ("like", 2):
