@@ -26,7 +26,7 @@ if (players != null) {
             let form = new FormData();
             form.append("type", "guess");
             for (const id of sortable.toArray()) {
-                if (!isNaN(id)) form.append("guess", id);
+                form.append("guess", id);
             }
             send(form);
         }),

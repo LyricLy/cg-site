@@ -207,7 +207,7 @@ def show_round(num):
                         break
                 for id, name, _ in query:
                     if id == your_id:
-                        panel += f'<li class="player you">{name} (you!)</li>'
+                        panel += f'<li data-id="{id}" class="player you">{name} (you!)</li>'
                     else:
                         panel += f'<li data-id="{id}" class="player">↕ {name}</li>'
                 panel += "</ol><br>"
