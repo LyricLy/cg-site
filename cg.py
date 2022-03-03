@@ -141,6 +141,12 @@ def render_submissions(db, num, show_info):
     return entries, formatter.get_style_defs(".code")
 
 LANGUAGES = ["py", "rs", "bf", "hs", "png", "text"]
+META = """
+<meta charset="utf-8">
+<meta content="website" property="og:type">
+<meta content="https://cg.esolangs.gay/favicon.ico" property="og:image">
+<meta content="Esolangs" property="og:site_name">
+"""
 
 @app.route("/<int:num>/")
 def show_round(num):
@@ -172,16 +178,20 @@ def show_round(num):
                     panel += '<input type="submit" value="change languages"></form>'
             else:
                 panel = '<form method="get" action="/login"><input type="submit" value="Login with Discord"></form>'
+            submit_by = rnd['started_at']+datetime.timedelta(days=7)
             return f"""
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset=\"utf-8\">
     <title>cg #{num}/1</title>
+    {META}
+    <meta content="code guessing #{num}/1" property="og:title">
+    <meta content="{rnd['spec'].splitlines()[0]} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
+    <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
-    <p>started at {format_time(rnd['started_at'])}. submit by {format_time(rnd['started_at']+datetime.timedelta(days=7))}</p>
+    <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>submit</h2>
@@ -232,12 +242,16 @@ def show_round(num):
                     panel += '<form method="get" action="/login"><input type="submit" value="Login with Discord"></form>'
                 else:
                     panel += "<p>you weren't a part of this round. come back next time?</p>"
+            guess_by = rnd['stage2_at']+datetime.timedelta(days=4)
             return f"""
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset=\"utf-8\">
     <title>cg #{num}/2</title>
+    {META}
+    <meta content="code guessing #{num}/2" property="og:title">
+    <meta content="{len(query)} submissions received. guess by {guess_by.strftime('%B %d (%A)')}." property="og:description">
+    <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <style>{style}</style>
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
     <script src="/main.js" defer></script>
@@ -259,7 +273,7 @@ def show_round(num):
   </head>
   <body>
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
-    <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(rnd['stage2_at']+datetime.timedelta(days=4))}</p>
+    <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     {panel}
@@ -308,6 +322,10 @@ def show_round(num):
 <html>
   <head>
     <meta charset=\"utf-8\">
+    {META}
+    <meta content="code guessing #{num}" property="og:title">
+    <meta content="round concluded." property="og:description">
+    <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <title>cg #{num}</title>
     <style>{style}</style>
     <script src="/main.js"></script> 
