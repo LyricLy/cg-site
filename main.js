@@ -35,16 +35,6 @@ if (players != null) {
     });
 }
 
-let target = document.getElementById("target");
-if (target != null) {
-    target.addEventListener("change", debounced(() => {
-        let form = new FormData();
-        form.append("type", "target");
-        form.append("target", target.value);
-        send(form);
-    }));
-}
-
 for (const like of document.getElementsByClassName("like")) {
     like.addEventListener("change", debounced(() => {
         let form = new FormData();

@@ -217,18 +217,6 @@ def show_round(num):
                     else:
                         panel += f'<li data-id="{id}" class="player">↕ {name}</li>'
                 panel += "</ol><br>"
-                targets = ""
-                query.sort(key=lambda q: q[1].lower())
-                target, = db.execute("SELECT target FROM Targets WHERE round_num = ? AND player_id = ?", (num, your_id)).fetchone() or [None]
-                for id, name, _ in query:
-                    if id != your_id:
-                        selected = " selected"*(id==target)
-                        targets += f'<option value="{id}"{selected}>{name}</option>'
-                panel += f"""
-  <label for="target">impersonating</label>
-  <select id="target">{targets}</select>
-  <em><small>you'll get an extra point for everyone that guesses you as this person</em></small>
-"""
             else:
                 panel = '<h2>players</h2><ol>'
                 for _, name, _ in query:
@@ -250,7 +238,7 @@ def show_round(num):
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <style>{style}</style>
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
-    <script src="/main.js" defer></script>
+    <script src="/main.js"></script>
     <style>
       .highlight {{
         color: #F7A8B8;
@@ -300,7 +288,7 @@ def show_round(num):
                     current = idx
                     last = key(t)
                 name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
-                bonus_s = f" ~{bonus}"*(num >= 12)
+                bonus_s = f" ~{bonus}"*(num in (12, 13))
                 results += f'<li value="{current}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
                 for guess, actual, pos in db.execute("SELECT People1.name, People2.name, Submissions.position FROM Guesses "
                                                 "INNER JOIN People AS People1 ON People1.id = Guesses.guess "
@@ -373,8 +361,6 @@ def take(num):
                 for position, guess in enumerate(form.getlist("guess"), start=1):
                     if int(guess) != user.id:
                         db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
-            case ("target", 2):
-                db.execute("INSERT OR REPLACE INTO Targets VALUES (?, ?, ?)", (num, user.id, int(form["target"])))
             case ("like", 2):
                 id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(form["position"]))).fetchone()
                 if form["checked"] == "true":
