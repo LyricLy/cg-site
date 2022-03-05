@@ -112,15 +112,10 @@ def render_submissions(db, num, show_info):
                                              "INNER JOIN People AS People2 ON People2.id = Guesses.guess "
                                              "WHERE Guesses.round_num = ? AND Guesses.actual = ? ORDER BY People2.name", (num, author)):
                 if guess == name:
-                    o = "<strong>"
-                    e = "</strong>"
+                    guess = f"<strong>{guess}</strong>"
                 elif guess == target:
-                    o = "<em>"
-                    e = "</em>"
-                else:
-                    o = ""
-                    e = ""
-                entries += f"<li>{o}{guess}{e} (by {guesser})</li>"
+                    guess = f"<em>{guess}</em>"
+                entries += f"<li>{guess} (by {guesser})</li>"
             entries += "</ul></details><br>"
         elif discord.authorized:
             checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
@@ -307,15 +302,15 @@ def show_round(num):
                 name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
                 bonus_s = f" ~{bonus}"*(num >= 12)
                 results += f'<li value="{current}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
-                for guess, actual in db.execute("SELECT People1.name, People2.name FROM Guesses "
+                for guess, actual, pos in db.execute("SELECT People1.name, People2.name, Submissions.position FROM Guesses "
                                                 "INNER JOIN People AS People1 ON People1.id = Guesses.guess "
                                                 "INNER JOIN People AS People2 ON People2.id = Guesses.actual "
                                                 "INNER JOIN Submissions ON Submissions.round_num = Guesses.round_num AND Submissions.author_id = Guesses.actual "
                                                 "WHERE Guesses.round_num = ? AND Guesses.player_id = ? ORDER BY Submissions.position", (num, author)):
                     if guess == actual:
-                        results += f"<li><strong>{actual}</strong></li>"
+                        results += f'<li value="{pos}"><strong>{actual}</strong></li>'
                     else:
-                        results += f"<li>{guess} (was {actual})</li>"
+                        results += f'<li value="{pos}">{guess} (was {actual})</li>'
                 results += "</ol></details></li>"
             results += "</ol>"
             return f"""
