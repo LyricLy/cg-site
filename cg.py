@@ -182,7 +182,7 @@ def show_round(num):
     <title>cg #{num}/1</title>
     {META}
     <meta content="code guessing #{num}/1" property="og:title">
-    <meta content="{rnd['spec'].splitlines()[0]} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
+    <meta content="{discord.utils.remove_markdown(rnd['spec'].splitlines()[0])} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
   </head>
   <body>
