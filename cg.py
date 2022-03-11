@@ -142,6 +142,7 @@ META = """
 <meta content="website" property="og:type">
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
+<script src="/main.js"></script> 
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
@@ -239,7 +240,6 @@ def show_round(num):
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <style>{style}</style>
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
-    <script src="/main.js"></script>
     <style>
       .highlight {{
         color: #F7A8B8;
@@ -313,7 +313,6 @@ def show_round(num):
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <title>cg #{num}</title>
     <style>{style}</style>
-    <script src="/main.js"></script> 
   </head>
   <body>
     <h1>code guessing, round #{num} (completed)</h1>
