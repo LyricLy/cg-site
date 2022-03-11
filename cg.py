@@ -143,6 +143,7 @@ META = """
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
 """
+LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
 @app.route("/<int:num>/")
 def show_round(num):
@@ -173,7 +174,7 @@ def show_round(num):
                         panel += "</select><br>"
                     panel += '<input type="submit" value="change languages"></form>'
             else:
-                panel = '<form method="get" action="/login"><input type="submit" value="Login with Discord"></form>'
+                panel = LOGIN_BUTTON
             submit_by = rnd['started_at']+datetime.timedelta(days=7)
             return f"""
 <!DOCTYPE html>
@@ -223,7 +224,7 @@ def show_round(num):
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
                 if not discord.authorized:
-                    panel += '<form method="get" action="/login"><input type="submit" value="Login with Discord"></form>'
+                    panel += LOGIN_BUTTON
                 else:
                     panel += "<p>you weren't a part of this round. come back next time?</p>"
             guess_by = rnd['stage2_at']+datetime.timedelta(days=4)
