@@ -138,7 +138,7 @@ def render_submissions(db, num, show_info):
 def rank_enumerate(xs, *, key):
     cur_idx = None
     cur_key = None
-    for idx, x in enumerate(xs, start=1):
+    for idx, x in enumerate(sorted(xs, key=key, reverse=True), start=1):
         if cur_key is None or key(x) < cur_key:
             cur_idx = idx
             cur_key = key(x)
@@ -277,22 +277,17 @@ def show_round(num):
 """
         case 3:
             entries, style = render_submissions(db, num, True)
-            counts = []
-            for author, in db.execute("SELECT author_id FROM Submissions WHERE round_num = ?", (num,)):
-                plus, = db.execute("SELECT COUNT(*) FROM Guesses WHERE round_num = ? AND player_id = ? AND guess = actual", (num, author)).fetchone()
-                bonus, = db.execute("SELECT COUNT(*) FROM Guesses "
-                                    "INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = Guesses.actual "
-                                    "WHERE Guesses.round_num = ? AND Guesses.actual = ? AND Guesses.guess = Targets.target", (num, author)).fetchone()
-                minus, = db.execute("SELECT COUNT(*) FROM Guesses WHERE round_num = ? AND actual = ? AND guess = actual", (num, author)).fetchone()
-                counts.append((author, plus, bonus, minus))
-            def key(t):
-                _, plus, bonus, minus = t
-                return plus+bonus-minus, plus, bonus
-            counts.sort(key=key, reverse=True)
+            lb = db.execute("""
+            SELECT name, author_id,
+                   (SELECT COUNT(*) FROM Guesses WHERE player_id = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num),
+                   (SELECT COUNT(*) FROM Guesses
+                    INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
+                    WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num),
+                   (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num)
+            FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ?""", (num,))
             results = "<ol>"
-            for idx, t in rank_enumerate(counts, key=key):
-                author, plus, bonus, minus = t
-                name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
+            for idx, t in rank_enumerate(lb, key=lambda t: (t[2]+t[3]-t[4], t[2], t[3])):
+                name, author, plus, bonus, minus = t
                 bonus_s = f" ~{bonus}"*(num in (12, 13))
                 results += f'<li value="{idx}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
                 for guess, actual, pos in db.execute("SELECT People1.name, People2.name, Submissions.position FROM Guesses "
@@ -384,23 +379,43 @@ def take(num):
 def stats():
     db = get_db()
     lb = db.execute("""
-    SELECT name, (SELECT COUNT(*) FROM Guesses WHERE player_id = id AND guess = actual) AS plus,
-                 (SELECT COUNT(*) FROM Guesses WHERE guess = id AND guess = actual) AS minus,
-                 (SELECT COUNT(*) FROM Guesses INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual WHERE actual = id AND guess = Targets.target) AS bonus
-    FROM People ORDER BY plus+bonus-minus DESC""")
-    s = ""
-    first = []
-    for rank, (name, plus, minus, bonus) in rank_enumerate(lb, key=lambda t: t[1]-t[2]+t[3]):
-        score = plus-minus+bonus
-        if rank == 1:
-            first.append((name, score))
-        bonus_s = f" (~{bonus})" if bonus else ""
-        s += f'<li value="{rank}"><strong>{name}</strong> +{plus} -{minus}{bonus_s} = {score}</li>'
-    match first:
-        case [(name, score)]:
+    SELECT name, (SELECT COUNT(*) FROM Guesses WHERE player_id = id AND guess = actual),
+                 (SELECT COUNT(*) FROM Guesses INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual WHERE actual = id AND guess = Targets.target),
+                 (SELECT COUNT(*) FROM Guesses WHERE guess = id AND guess = actual),
+                 (SELECT COUNT(*) FROM Submissions WHERE author_id = id)
+    FROM People""")
+    rows = ["rank", "player", "gain", "loss", "bonus", "total", "~total", "played", "avg score", "avg gain", "avg loss"]
+    table = "<thead><tr>"
+    for row in rows:
+        table += f'<th scope="col">{row}</th>'
+    table += "</tr></thead>"
+    e = list(rank_enumerate(lb, key=lambda t: t[1]+t[2]-t[3]))
+    for rank, (name, plus, bonus, minus, played) in e:
+        if not played:
+            continue
+        values = [
+            rank,
+            name,
+            plus,
+            minus,
+            bonus,
+            plus+bonus-minus,
+            plus-minus,
+            played,
+            f"{(plus+bonus-minus)/played:.3f}",
+            f"{plus/played:.3f}",
+            f"{minus/played:.3f}",
+            
+        ]
+        table += "<tr>"
+        for value in values:
+            table += f"<td>{value}</td>"
+        table += "</tr>"
+    match [tuple(x[1]) for x in e if x[0] == 1]:
+        case [(name, score, _, _, _)]:
             desc = f"{name} leads with {score} points."
-        case [(_, score), *_]:
-            desc = f"{len(first)} people lead with {score} points."
+        case [(_, score, _, _, _), *xs]:
+            desc = f"{len(xs)+1} people lead with {score} points."
     return f"""
 <!DOCTYPE html>
 <html>
@@ -409,13 +424,15 @@ def stats():
     <meta content="code guessing stats" property="og:title">
     <meta content="{desc}" property="og:description">
     <meta content="https://cg.esolangs.gay/stats/" property="og:url">
+    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
     <title>cg stats</title>
+    <style>th, td {{ border: 1px solid; padding: 4px; }} table {{ border-collapse: collapse; }}</style>
   </head>
   <body>
     <h1>code guessing stats</h1>
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
-    <ol>{s}</ol>
+    <table class="sortable">{table}</table>
   </body>
 </html>
 """
