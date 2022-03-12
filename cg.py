@@ -135,6 +135,15 @@ def render_submissions(db, num, show_info):
                 entries += "</details>"
     return entries, formatter.get_style_defs(".code")
 
+def rank_enumerate(xs, *, key):
+    cur_idx = None
+    cur_key = None
+    for idx, x in enumerate(xs, start=1):
+        if cur_key is None or key(x) < cur_key:
+            cur_idx = idx
+            cur_key = key(x)
+        yield (cur_idx, x)
+
 LANGUAGES = ["py", "rs", "bf", "hs", "c", "png", "text"]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
@@ -280,17 +289,12 @@ def show_round(num):
                 _, plus, bonus, minus = t
                 return plus+bonus-minus, plus, bonus
             counts.sort(key=key, reverse=True)
-            current = None
-            last = None
             results = "<ol>"
-            for idx, t in enumerate(counts, start=1):
+            for idx, t in rank_enumerate(counts, key=key):
                 author, plus, bonus, minus = t
-                if last is None or key(t) < last:
-                    current = idx
-                    last = key(t)
                 name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
                 bonus_s = f" ~{bonus}"*(num in (12, 13))
-                results += f'<li value="{current}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
+                results += f'<li value="{idx}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
                 for guess, actual, pos in db.execute("SELECT People1.name, People2.name, Submissions.position FROM Guesses "
                                                 "INNER JOIN People AS People1 ON People1.id = Guesses.guess "
                                                 "INNER JOIN People AS People2 ON People2.id = Guesses.actual "
@@ -306,7 +310,6 @@ def show_round(num):
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset=\"utf-8\">
     {META}
     <meta content="code guessing #{num}" property="og:title">
     <meta content="round concluded." property="og:description">
@@ -376,6 +379,46 @@ def take(num):
         db.commit()
     finally:
         return flask.redirect(flask.url_for("show_round", num=num))
+
+@app.route("/stats/")
+def stats():
+    db = get_db()
+    lb = db.execute("""
+    SELECT name, (SELECT COUNT(*) FROM Guesses WHERE player_id = id AND guess = actual) AS plus,
+                 (SELECT COUNT(*) FROM Guesses WHERE guess = id AND guess = actual) AS minus,
+                 (SELECT COUNT(*) FROM Guesses INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual WHERE actual = id AND guess = Targets.target) AS bonus
+    FROM People ORDER BY plus+bonus-minus DESC""")
+    s = ""
+    first = []
+    for rank, (name, plus, minus, bonus) in rank_enumerate(lb, key=lambda t: t[1]-t[2]+t[3]):
+        score = plus-minus+bonus
+        if rank == 1:
+            first.append((name, score))
+        bonus_s = f" (~{bonus})" if bonus else ""
+        s += f'<li value="{rank}"><strong>{name}</strong> +{plus} -{minus}{bonus_s} = {score}</li>'
+    match first:
+        case [(name, score)]:
+            desc = f"{name} leads with {score} points"
+        case [(_, score), *_]:
+            desc = f"{len(first)} people lead with {score} points"
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    {META}
+    <meta content="code guessing stats" property="og:title">
+    <meta content="{desc}" property="og:description">
+    <meta content="https://cg.esolangs.gay/stats/" property="og:url">
+    <title>cg stats</title>
+  </head>
+  <body>
+    <h1>code guessing stats</h1>
+    <p>welcome. more coming soon!</p>
+    <h2>leaderboard</h2>
+    <ol>{s}</ol>
+  </body>
+</html>
+"""
 
 @app.route("/callback")
 def callback():
