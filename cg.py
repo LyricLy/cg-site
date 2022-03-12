@@ -398,9 +398,9 @@ def stats():
         s += f'<li value="{rank}"><strong>{name}</strong> +{plus} -{minus}{bonus_s} = {score}</li>'
     match first:
         case [(name, score)]:
-            desc = f"{name} leads with {score} points"
+            desc = f"{name} leads with {score} points."
         case [(_, score), *_]:
-            desc = f"{len(first)} people lead with {score} points"
+            desc = f"{len(first)} people lead with {score} points."
     return f"""
 <!DOCTYPE html>
 <html>
