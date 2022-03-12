@@ -63,7 +63,23 @@ def root():
 
 @app.route("/index/")
 def index():
-    return "<ul>" + "".join(f"<li><a href='/{n}/'>round {n}</a></li>" for n, in get_db().execute("SELECT num FROM Rounds ORDER BY num")) + "</ul>"
+    rounds = "<ul>" + "".join(f"<li><a href='/{n}/'>round {n}</a></li>" for n, in get_db().execute("SELECT num FROM Rounds ORDER BY num")) + "</ul>"
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    {META}
+    <meta content="code guessing" property="og:title">
+    <meta content="code and guess and such." property="og:description">
+    <meta content="https://cg.esolangs.gay/index/" property="og:url">
+    <title>cg index</title>
+  </head>
+  <body>
+    <p><a href="/stats/">stats</a></p>
+    {rounds}
+  </body>
+</html>
+"""
 
 @app.route("/<int:num>/<name>")
 def download_file(num, name):
@@ -89,50 +105,58 @@ def favicon():
 def format_time(dt):
     return f'<span class="datetime">{dt.isoformat()}</span>'
 
+def render_submission(db, formatter, row, show_info, written_by=True):
+    author, num, submitted_at, position = row
+    entries = ""
+    if show_info:
+        name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
+        if written_by:
+            entries += f"<p>written by {name}<br>"
+        target = db.execute("SELECT People.name FROM Targets INNER JOIN People ON People.id = Targets.target WHERE Targets.round_num = ? AND Targets.player_id = ?", (num, author)).fetchone()
+        if submitted_at:
+            entries += f"submitted at {format_time(submitted_at)}<br>"
+        if target:
+            target ,= target
+            entries += f"impersonating {target}<br>"
+        likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
+        if num >= 13:
+            entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
+        entries += "<details><summary><strong>guesses</strong></summary><ul>"
+        for guesser, guess in db.execute("SELECT People1.name, People2.name FROM Guesses "
+                                         "INNER JOIN People AS People1 ON People1.id = Guesses.player_id "
+                                         "INNER JOIN People AS People2 ON People2.id = Guesses.guess "
+                                         "WHERE Guesses.round_num = ? AND Guesses.actual = ? ORDER BY People2.name", (num, author)):
+            if guess == name:
+                guess = f"<strong>{guess}</strong>"
+            elif guess == target:
+                guess = f"<em>{guess}</em>"
+            entries += f"<li>{guess} (by {guesser})</li>"
+        entries += "</ul></details><br>"
+    elif discord.authorized:
+        checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
+        entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
+    for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
+        if lang is None:
+            entries += f'<p><a href="/{num}/{name}">{name}</a></p>'
+        else:
+            entries += f'<details><summary><a href="/{num}/{name}">{name}</a></summary>'
+            if lang.startswith("iframe"):
+                url = "/files/" + lang.removeprefix("iframe ")
+                entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
+            elif lang == "png":
+                entries += f'<img src="/{num}/{name}">'
+            else:
+                entries += highlight(content, get_lexer_by_name(lang), formatter)
+            entries += "</details>"
+    return entries
+
 def render_submissions(db, num, show_info):
     formatter = HtmlFormatter(style="monokai", linenos=True)
     entries = ""
-    for author, _, submitted_at, position in db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
+    for r in db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
+        position = r["position"]
         entries += f'<h2 id="{position}">entry #{position}</h2>'
-        if show_info:
-            name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
-            entries += f"<p>written by {name}<br>"
-            target = db.execute("SELECT People.name FROM Targets INNER JOIN People ON People.id = Targets.target WHERE Targets.round_num = ? AND Targets.player_id = ?", (num, author)).fetchone()
-            if submitted_at:
-                entries += f"submitted at {format_time(submitted_at)}<br>"
-            if target:
-                target ,= target
-                entries += f"impersonating {target}<br>"
-            likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
-            if num >= 13:
-                entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
-            entries += "<details><summary><strong>guesses</strong></summary><ul>"
-            for guesser, guess in db.execute("SELECT People1.name, People2.name FROM Guesses "
-                                             "INNER JOIN People AS People1 ON People1.id = Guesses.player_id "
-                                             "INNER JOIN People AS People2 ON People2.id = Guesses.guess "
-                                             "WHERE Guesses.round_num = ? AND Guesses.actual = ? ORDER BY People2.name", (num, author)):
-                if guess == name:
-                    guess = f"<strong>{guess}</strong>"
-                elif guess == target:
-                    guess = f"<em>{guess}</em>"
-                entries += f"<li>{guess} (by {guesser})</li>"
-            entries += "</ul></details><br>"
-        elif discord.authorized:
-            checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
-            entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
-        for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
-            if lang is None:
-                entries += f'<p><a href="/{num}/{name}">{name}</a></p>'
-            else:
-                entries += f'<details><summary><a href="/{num}/{name}">{name}</a></summary>'
-                if lang.startswith("iframe"):
-                    url = "/files/" + lang.removeprefix("iframe ")
-                    entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
-                elif lang == "png":
-                    entries += f'<img src="/{num}/{name}">'
-                else:
-                    entries += highlight(content, get_lexer_by_name(lang), formatter)
-                entries += "</details>"
+        entries += render_submission(db, formatter, r, show_info)
     return entries, formatter.get_style_defs(".code")
 
 def rank_enumerate(xs, *, key):
@@ -202,7 +226,7 @@ def show_round(num):
     <h2>specification</h2>
     {mistune.html(rnd['spec'])}
     <h2>submit</h2>
-    <p>{'<br>'.join(flask.get_flashed_messages())}</p>
+    <p>{dict(enumerate(flask.get_flashed_messages())).get(0, "")}</p>
     {panel}
   </body>
 </html>
@@ -395,7 +419,7 @@ def stats():
             continue
         values = [
             rank,
-            name,
+            f'<a href="/stats/{name}">{name}</a>',
             plus,
             minus,
             bonus,
@@ -433,6 +457,39 @@ def stats():
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
     <table class="sortable">{table}</table>
+  </body>
+</html>
+"""
+
+@app.route("/stats/<player>")
+def user_stats(player):
+    db = get_db()
+    s = ""
+    sc = 0
+    formatter = HtmlFormatter(style="monokai", linenos=True)
+    for r in db.execute("SELECT Submissions.* FROM Submissions INNER JOIN Rounds ON num = round_num INNER JOIN People ON name = ? WHERE stage = 3 AND author_id = id ORDER BY round_num", (player,)):
+        position = r["position"]
+        num = r["round_num"]
+        s += f'<h2 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h2>'
+        s += render_submission(db, formatter, r, True, written_by=False)
+        sc += 1
+    if not sc:
+        flask.abort(404)
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    {META}
+    <meta content="{player}'s code guessing stats" property="og:title">
+    <meta content="see their {sc} awesome entries" property="og:description">
+    <meta content="https://cg.esolangs.gay/stats/{player}" property="og:url">
+    <title>cg - {player}</title>
+    <style>{formatter.get_style_defs(".code")}</style>
+  </head>
+  <body>
+    <h1>{player}'s stats</h1>
+    <h2>entries</h2>
+    {s}
   </body>
 </html>
 """
