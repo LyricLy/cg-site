@@ -135,14 +135,14 @@ def render_submissions(db, num, show_info):
                 entries += "</details>"
     return entries, formatter.get_style_defs(".code")
 
-LANGUAGES = ["py", "rs", "bf", "hs", "png", "text"]
+LANGUAGES = ["py", "rs", "bf", "hs", "c", "png", "text"]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
 <meta content="website" property="og:type">
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
-<script src="/main.js"></script> 
+<script src="/main.js"></script>
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
