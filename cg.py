@@ -397,6 +397,7 @@ def take(num):
         flask.flash("submitted successfully")
         db.commit()
     finally:
+        db.rollback()
         return flask.redirect(flask.url_for("show_round", num=num))
 
 @app.route("/stats/")
