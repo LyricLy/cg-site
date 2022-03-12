@@ -87,7 +87,7 @@ def favicon():
     return flask.send_file("./favicon.png")
 
 def format_time(dt):
-    return f'<span class="datetime">{dt}</span>'
+    return f'<span class="datetime">{dt.isoformat()}</span>'
 
 def render_submissions(db, num, show_info):
     formatter = HtmlFormatter(style="monokai", linenos=True)
