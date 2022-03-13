@@ -6,6 +6,7 @@ import io
 import os
 import uuid
 
+import bleach
 import mistune
 import flask
 import flask_discord
@@ -136,6 +137,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
+        name = bleach.clean(name)
         if lang is None:
             entries += f'<p><a href="/{num}/{name}">{name}</a></p>'
         else:
@@ -359,7 +361,8 @@ def take(num):
     form = flask.request.form
     if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}"):
         flask.abort(403)
-    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
+    if user.id != 356107472269869058:
+        db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
     try:
         match (form["type"], rnd["stage"]):
             case ("upload", 1):
@@ -376,8 +379,11 @@ def take(num):
                     db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, file.read(), guess))
             case ("langs", 1):
                 for key, value in form.items():
-                    if key != "type":
-                        db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
+                    if key == "type":
+                        continue
+                    if value not in LANGUAGES:
+                        flask.abort(400)
+                    db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
                 for position, guess in enumerate(form.getlist("guess"), start=1):
@@ -430,7 +436,6 @@ def stats():
             f"{(plus+bonus-minus)/played:.3f}",
             f"{plus/played:.3f}",
             f"{minus/played:.3f}",
-            
         ]
         table += "<tr>"
         for value in values:
