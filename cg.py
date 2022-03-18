@@ -177,7 +177,7 @@ META = """
 <meta content="website" property="og:type">
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
-<script src="/main.js"></script>
+<script src="/main.js" defer></script>
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 

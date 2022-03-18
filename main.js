@@ -1,8 +1,6 @@
-window.addEventListener("DOMContentLoaded", (event) => {
-    for (const elem of document.getElementsByClassName("datetime")) {
-        elem.innerHTML = new Date(elem.innerHTML).toLocaleString();
-    }
-});
+for (const elem of document.getElementsByClassName("datetime")) {
+    elem.innerHTML = new Date(elem.innerHTML).toLocaleString();
+}
 
 function debounced(func) {
     let timeout;
