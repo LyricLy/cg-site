@@ -410,10 +410,11 @@ def take(num):
 def stats():
     db = get_db()
     lb = db.execute("""
-    SELECT name, (SELECT COUNT(*) FROM Guesses WHERE player_id = id AND guess = actual),
-                 (SELECT COUNT(*) FROM Guesses INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual WHERE actual = id AND guess = Targets.target),
-                 (SELECT COUNT(*) FROM Guesses WHERE guess = id AND guess = actual),
-                 (SELECT COUNT(*) FROM Submissions WHERE author_id = id)
+    WITH Finished AS (SELECT num FROM Rounds WHERE stage = 3)
+    SELECT name, (SELECT COUNT(*) FROM Guesses WHERE player_id = id AND guess = actual AND round_num IN Finished),
+                 (SELECT COUNT(*) FROM Guesses INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual WHERE actual = id AND guess = Targets.target AND Guesses.round_num IN Finished),
+                 (SELECT COUNT(*) FROM Guesses WHERE guess = id AND guess = actual AND round_num IN Finished),
+                 (SELECT COUNT(*) FROM Submissions WHERE author_id = id AND round_num IN Finished)
     FROM People""")
     rows = ["rank", "player", "gain", "loss", "bonus", "total", "~total", "played", "avg score", "avg gain", "avg loss"]
     table = "<thead><tr>"
