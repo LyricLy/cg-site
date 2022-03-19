@@ -287,7 +287,18 @@ def show_round(num):
         padding: 10px;
       }}
       .you {{
-        color: #55CDFC;
+        animation: blink 2s infinite;
+      }}
+      @keyframes blink {{
+        0% {{
+            color: #55CDFC;
+        }}
+        50% {{
+            color: #55FCAB;
+        }}
+        100% {{
+            color: #55CDFC;
+        }}
       }}
     </style>
   </head>
