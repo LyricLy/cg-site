@@ -25,6 +25,7 @@ app.secret_key = config.secret_key
 app.config |= {
     "SESSION_COOKIE_HTTPONLY": False,
     "SESSION_COOKIE_SECURE": True,
+    "MAX_CONTENT_LENGTH": 32 * 1024 * 1024,
 }
 if "OAUTHLIB_INSECURE_TRANSPORT" in os.environ:
     cb_url = "http://127.0.0.1:7000/callback"
@@ -387,7 +388,10 @@ def take(num):
                         guess = min(get_lexer_for_filename(file.filename).aliases, key=len)
                     except ClassNotFound:
                         guess = "png" if file.filename.endswith(".png") else "text"
-                    db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, file.read(), guess))
+                    b = file.read()
+                    if len(b) > 64*1024:
+                        guess = None
+                    db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
             case ("langs", 1):
                 for key, value in form.items():
                     if key == "type":
