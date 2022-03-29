@@ -171,7 +171,7 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = ["py", "rs", "bf", "hs", "c", "png", "text"]
+LANGUAGES = ["py", "rs", "bf", "hs", "c", "go", "zig", "d", "png", "text"]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
