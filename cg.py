@@ -160,7 +160,7 @@ def render_submissions(db, num, show_info):
         position = r["position"]
         entries += f'<h2 id="{position}">entry #{position}</h2>'
         entries += render_submission(db, formatter, r, show_info)
-    return entries, formatter.get_style_defs(".code")
+    return entries, formatter.get_style_defs(".code") + ".code { tab-size: 4; }"
 
 def rank_enumerate(xs, *, key):
     cur_idx = None
