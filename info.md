@@ -28,7 +28,7 @@ After about a week to deliberate, the round is over and players are scored. __Fo
 It could be you. You could win! Wouldn't that be nice?
 
 ### Tiebreaker
-If there's a tie for the winner of the round, it's usually broken based on the number of points gained from guessing correctly. If there's still a tie, however, there's another method.
+If there's a tie for the winner! of the round, it's usually broken based on the number of points gained from guessing correctly. If there's still a tie, however, there's another method.
 
 Wait for the Prime Minister of the United Kingdom to write a tweet, with text in it. You take the sha256 hash of the tweet (in UTF-8), and use the result as a (big-endian) number to index into the (numerically) sorted list of all Discord IDs who tied for the top score in the round. (The lowest ID is at index 0, and the index is modulo the length of the list.) Whoever is selected, wins!
 
