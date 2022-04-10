@@ -77,7 +77,7 @@ def index():
     <title>cg index</title>
   </head>
   <body>
-    <p><a href="/stats/">stats</a></p>
+    <p><a href="/stats/">stats</a> &bull; <a href="/info">info</a> &bull; <a href="/credits">credits</a></p>
     {rounds}
   </body>
 </html>
@@ -103,6 +103,56 @@ def js():
 @app.route("/favicon.png")
 def favicon():
     return flask.send_file("./favicon.png")
+
+@app.route("/credits")
+def credits():
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>cg - credits</title>
+    {META}
+    <meta content="code guessing credits" property="og:title">
+    <meta content="all the people that made this happen." property="og:description">
+    <meta content="https://cg.esolangs.gay/credits" property="og:url">
+  </head>
+  <body>
+    <h1>credits and acknowledgements</h1>
+    <ul>
+      <li>umnikos - inital concept</li>
+      <li>ubq323 - creating the original ruleset and hosting the first 5 rounds</li>
+      <li>HelloBoi - helping host round 4</li>
+      <li>deadbraincoral - helping host round 4</li>
+      <li>sonata «pathétique» - helping host the first 5 rounds</li>
+      <li>LyricLy - rule amendments, bot development, site development, and hosting round 6 and onwards</li>
+      <li>RocketRace - site ideas</li>
+      <li>Palaiologos - providing additional direction</li>
+      <li>IFcoltransG - writing the info page</li>
+      <li>the players - designing the rounds and writing the submissions</li>
+    </ul>
+  </body>
+</html>
+"""
+
+@app.route("/info")
+def info():
+    with open("info.md") as f:
+        m = mistune.html(f.read())
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>cg - info</title>
+    {META}
+    <meta content="code guessing info" property="og:title">
+    <meta content="what is code guessing?" property="og:description">
+    <meta content="https://cg.esolangs.gay/info" property="og:url">
+  </head>
+  <body>
+    {m}
+  </body>
+</html>
+"""
 
 def format_time(dt):
     return f'<span class="datetime">{dt.isoformat()}</span>'
@@ -188,6 +238,15 @@ def show_round(num):
     rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
     if not rnd:
         flask.abort(404)
+
+    top_elems = []
+    if num > 1:
+        top_elems.append(f'<a href="/{num-1}/">prev</a>')
+    top_elems.append('<a href="/index">index</a>')
+    if db.execute("SELECT * FROM Rounds WHERE num = ?", (num+1,)).fetchone():
+        top_elems.append('<a href="/{num+1}">next</a>')
+    top = " &bull; ".join(top_elems)
+
     match rnd["stage"]:
         case 1:
             if discord.authorized:
@@ -224,6 +283,7 @@ def show_round(num):
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
   </head>
   <body>
+    {top}
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
     <h2>specification</h2>
@@ -304,6 +364,7 @@ def show_round(num):
     </style>
   </head>
   <body>
+    {top}
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
     <h2>specification</h2>
@@ -351,6 +412,7 @@ def show_round(num):
     <style>{style}</style>
   </head>
   <body>
+    {top}
     <h1>code guessing, round #{num} (completed)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 at {format_time(rnd['stage2_at'])}; ended at {format_time(rnd['ended_at'])}</p>
     <h2>specification</h2>
