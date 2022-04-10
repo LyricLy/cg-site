@@ -244,7 +244,7 @@ def show_round(num):
         top_elems.append(f'<a href="/{num-1}/">prev</a>')
     top_elems.append('<a href="/index">index</a>')
     if db.execute("SELECT * FROM Rounds WHERE num = ?", (num+1,)).fetchone():
-        top_elems.append('<a href="/{num+1}">next</a>')
+        top_elems.append(f'<a href="/{num+1}">next</a>')
     top = " &bull; ".join(top_elems)
 
     match rnd["stage"]:
