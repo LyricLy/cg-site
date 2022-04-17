@@ -3,6 +3,7 @@ import traceback
 import sqlite3
 import datetime
 import io
+import re
 import os
 import uuid
 
@@ -192,6 +193,8 @@ def render_submission(db, formatter, row, show_info, written_by=True):
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
         name = bleach.clean(name)
         filetype = magic.from_buffer(content)
+        # remove appalling attempts at guessing language
+        filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
         header = f'<a href="/{num}/{name}">{name}</a> <em>{filetype}</em>'
         if lang is None:
             entries += f'<p>{header}</p>'
