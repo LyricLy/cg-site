@@ -7,6 +7,8 @@ import os
 import uuid
 
 import bleach
+import charset_normalizer
+import magic
 import mistune
 import flask
 import flask_discord
@@ -189,17 +191,19 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
         name = bleach.clean(name)
+        filetype = magic.from_buffer(content)
+        header = f'<a href="/{num}/{name}">{name}</a> <em>{filetype}</em>'
         if lang is None:
-            entries += f'<p><a href="/{num}/{name}">{name}</a></p>'
+            entries += f'<p>{header}</p>'
         else:
-            entries += f'<details><summary><a href="/{num}/{name}">{name}</a></summary>'
+            entries += f'<details><summary>{header}</summary>'
             if lang.startswith("iframe"):
                 url = "/files/" + lang.removeprefix("iframe ")
                 entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
             elif lang == "png":
                 entries += f'<img src="/{num}/{name}">'
             else:
-                entries += highlight(content, get_lexer_by_name(lang), formatter)
+                entries += highlight(str(charset_normalizer.from_bytes(content).best()), get_lexer_by_name(lang), formatter)
             entries += "</details>"
     return entries
 
