@@ -76,9 +76,9 @@ function toggleSticky() {
     let list = guessPanel.classList;
     if (list.contains("sticky")) {
         list.remove("sticky");
-        stickyButton.innerHTML = "Restick";
+        stickyButton.innerHTML = "Rehide";
     } else {
         list.add("sticky");
-        stickyButton.innerHTML = "Unstick";
+        stickyButton.innerHTML = "Show";
     }
 }
