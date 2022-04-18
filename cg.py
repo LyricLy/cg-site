@@ -12,6 +12,7 @@ import charset_normalizer
 import magic
 import mistune
 import flask
+import flask_minify
 import flask_discord
 from flask_discord import requires_authorization as auth
 from pygments import highlight
@@ -24,6 +25,7 @@ import config
 
 
 app = flask.Flask(__name__)
+flask_minify.Minify(app=app)
 app.secret_key = config.secret_key
 app.config |= {
     "SESSION_COOKIE_HTTPONLY": False,
@@ -102,6 +104,10 @@ def download_file_available_for_public_access(name):
 @app.route("/main.js")
 def js():
     return flask.send_file("./main.js")
+
+@app.route("/main.css")
+def css():
+    return flask.send_file("./main.css")
 
 @app.route("/favicon.png")
 def favicon():
@@ -236,6 +242,7 @@ META = """
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
 <script src="/main.js" defer></script>
+<link rel="stylesheet" href="/main.css">
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
@@ -310,7 +317,7 @@ def show_round(num):
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _ in query):
-                panel = '<h2>guess</h2><ol id="players">'
+                panel = '<div id="guess-panel"><h2>guess</h2><ol id="players">'
                 for idx, (id, name, pos) in enumerate(query):
                     if id == your_id:
                         query.pop(idx)
@@ -321,7 +328,7 @@ def show_round(num):
                         panel += f'<li data-id="{id}" class="player you">{name} (you!)</li>'
                     else:
                         panel += f'<li data-id="{id}" class="player">↕ {name}</li>'
-                panel += "</ol><br>"
+                panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
                 for _, name, _ in query:
@@ -343,32 +350,6 @@ def show_round(num):
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <style>{style}</style>
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
-    <style>
-      .highlight {{
-        color: #F7A8B8;
-      }}
-      #players {{
-        display: inline-block;
-      }}
-      .player {{
-        border: 1px solid #000;
-        padding: 10px;
-      }}
-      .you {{
-        animation: blink 2s infinite;
-      }}
-      @keyframes blink {{
-        0% {{
-            color: #55CDFC;
-        }}
-        50% {{
-            color: #55FCAB;
-        }}
-        100% {{
-            color: #55CDFC;
-        }}
-      }}
-    </style>
   </head>
   <body>
     {top}
