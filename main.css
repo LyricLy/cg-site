@@ -25,8 +25,21 @@ h1, h2 {
 
 #guess-panel {
     float: right;
-    position: sticky;
     top: 10px;
+    padding: 8px;
+    background-color: white;
+    margin-bottom: -10000px;
+    margin-right: -20px;
+    border-radius: 10px;
+    border: 2px solid #333;
+}
+
+.sticky {
+    position: sticky;
+}
+
+#sticky-button {
+    float: right;
 }
 
 .highlight {

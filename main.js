@@ -1,4 +1,4 @@
-function do_unit(s, ms, amount, unit) {
+function doUnit(s, ms, amount, unit) {
     let u = Math.floor(ms / amount);
     if (u) {
         s.push(`${u} ${unit}${u > 1 ? "s" : ""}`);
@@ -19,10 +19,10 @@ for (const elem of document.getElementsByClassName("datetime")) {
             return;
         }
         let s = [];
-        ms = do_unit(s, ms, 1000*60*60*24, "day");
-        ms = do_unit(s, ms, 1000*60*60, "hour");
-        ms = do_unit(s, ms, 1000*60, "minute");
-        ms = do_unit(s, ms, 1000, "second");
+        ms = doUnit(s, ms, 1000*60*60*24, "day");
+        ms = doUnit(s, ms, 1000*60*60, "hour");
+        ms = doUnit(s, ms, 1000*60, "minute");
+        ms = doUnit(s, ms, 1000, "second");
         elem.innerHTML = `${date.toLocaleString()} (${s.join(", ")})`;
     };
     f();
@@ -68,4 +68,17 @@ for (const like of document.getElementsByClassName("like")) {
         form.append("checked", like.checked);
         send(form);
     }))
+}
+
+let stickyButton = document.getElementById("sticky-button");
+let guessPanel = document.getElementById("guess-panel");
+function toggleSticky() {
+    let list = guessPanel.classList;
+    if (list.contains("sticky")) {
+        list.remove("sticky");
+        stickyButton.innerHTML = "Restick";
+    } else {
+        list.add("sticky");
+        stickyButton.innerHTML = "Unstick";
+    }
 }
