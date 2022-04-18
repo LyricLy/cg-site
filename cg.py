@@ -164,7 +164,7 @@ def info():
 """
 
 def format_time(dt):
-    return f'<span class="datetime">{dt.isoformat()}</span>'
+    return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
 def render_submission(db, formatter, row, show_info, written_by=True):
     author, num, submitted_at, position = row
