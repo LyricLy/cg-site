@@ -10,12 +10,15 @@ p + ul {
     margin-top: -10px;
 }
 
+:not(div) > pre, code {
+    background-color: #EEE;
+}
+
 pre {
     font-size: 12px;
 }
 
 code {
-    background-color: #EEE;
     font-size: 14px;
 }
 
