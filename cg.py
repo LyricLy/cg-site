@@ -508,10 +508,10 @@ def stats():
             table += f"<td>{value}</td>"
         table += "</tr>"
     match [tuple(x[1]) for x in e if x[0] == 1]:
-        case [(name, score, _, _, _)]:
-            desc = f"{name} leads with {score} points."
-        case [(_, score, _, _, _), *xs]:
-            desc = f"{len(xs)+1} people lead with {score} points."
+        case [(name, plus, bonus, minus, _)]:
+            desc = f"{name} leads with {plus+bonus-minus} points."
+        case [(_, plus, bonus, minus, _), *xs]:
+            desc = f"{len(xs)+1} people lead with {plus+bonus-minus} points."
     return f"""
 <!DOCTYPE html>
 <html>
