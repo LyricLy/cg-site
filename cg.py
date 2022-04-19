@@ -201,7 +201,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         filetype = magic.from_buffer(content)
         # remove appalling attempts at guessing language
         filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
-        header = f'<a href="/{num}/{name}">{name}</a> <em>{filetype}</em>'
+        header = f'<a href="/{num}/{name}">{name}</a> <sub><em>{filetype}</em></sub>'
         if lang is None:
             entries += f'<p>{header}</p>'
         else:
