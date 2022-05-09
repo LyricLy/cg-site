@@ -257,7 +257,12 @@ def score_round(num):
             WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num),
            (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num)
     FROM Submissions WHERE round_num = ?""", (num,))
-    return ((author, plus+bonus-minus, plus, bonus, minus) for author, plus, bonus, minus in lb)
+    e = rank_enumerate(((author, plus+bonus-minus, plus, bonus, minus) for author, plus, bonus, minus in lb), key=lambda t: t[1:4])
+    if t := TIEBREAKS.get(num):
+        l = [(t.get(d[0], r), d) for r, d in e]
+        l.sort(key=lambda t: t[0])
+        return l
+    return e
 
 @app.route("/<int:num>/")
 def show_round(num):
@@ -378,7 +383,7 @@ def show_round(num):
         case 3:
             entries, style = render_submissions(db, num, True)
             results = "<ol>"
-            for idx, (author, total, plus, bonus, minus) in rank_enumerate(score_round(num), key=lambda t: t[1:4]):
+            for idx, (author, total, plus, bonus, minus) in score_round(num):
                 bonus_s = f" ~{bonus}"*(num in (12, 13))
                 results += f'<li value="{idx}"><details><summary><strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
                 for guess, actual, pos in db.execute(
@@ -475,24 +480,36 @@ def take(num):
         db.rollback()
         return flask.redirect(flask.url_for("show_round", num=num))
 
+# TODO consider moving into DB
+TIEBREAKS = {
+    6: {
+        241757436720054273: 2,
+        354579932837445635: 2,
+    },
+    12: {
+        345300752975003649: 1,
+        319753218592866315: 2,
+    }
+}
+
 @app.route("/stats/")
 def stats():
     db = get_db()
-    lb = defaultdict(lambda: [0, 0, 0, 0, 0])
+    lb = defaultdict(lambda: [0, 0, 0, 0, 0, 0])
     for num, in db.execute("SELECT num FROM Rounds WHERE stage = 3"):
-        for player, total, plus, bonus, minus in score_round(num):
+        for rank, (player, total, plus, bonus, minus) in score_round(num):
             p = lb[player]
-            for i, x in enumerate((total, plus, bonus, minus, 1)):
+            for i, x in enumerate((total, plus, bonus, minus, 1, TIEBREAKS.get(num, {}).get(player, rank) == 1)):
                 p[i] += x
 
-    rows = ["rank", "player", "gain", "loss", "bonus", "total", "~total", "played", "avg score", "avg gain", "avg loss"]
+    rows = ["rank", "player", "gain", "loss", "bonus", "total", "~total", "played", "won", "avg score", "avg gain", "avg loss"]
     table = "<thead><tr>"
     for row in rows:
         table += f'<th scope="col">{row}</th>'
     table += "</tr></thead>"
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
-    for rank, (player, (total, plus, bonus, minus, played)) in e:
+    for rank, (player, (total, plus, bonus, minus, played, won)) in e:
         if not played:
             continue
         name = get_name(player)
@@ -505,6 +522,7 @@ def stats():
             total,
             plus-minus,
             played,
+            won,
             f"{total/played:.3f}",
             f"{plus/played:.3f}",
             f"{minus/played:.3f}",
@@ -514,9 +532,9 @@ def stats():
             table += f"<td>{value}</td>"
         table += "</tr>"
     match [tuple(x[1]) for x in e if x[0] == 1]:
-        case [(name, (total, _, _, _, _))]:
+        case [(name, (total, *_))]:
             desc = f"{name} leads with {total} points."
-        case [(_, (total, _, _, _, _)), *xs]:
+        case [(_, (total, *_)), *xs]:
             desc = f"{len(xs)+1} people lead with {total} points."
     return f"""
 <!DOCTYPE html>
