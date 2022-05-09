@@ -5,7 +5,7 @@ import datetime
 import io
 import re
 import os
-import uuid
+from collections import defaultdict
 
 import bleach
 import charset_normalizer
@@ -163,6 +163,9 @@ def info():
 </html>
 """
 
+def get_name(i):
+    return get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0]
+
 def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
@@ -170,28 +173,27 @@ def render_submission(db, formatter, row, show_info, written_by=True):
     author, num, submitted_at, position = row
     entries = ""
     if show_info:
-        name, = db.execute("SELECT name FROM People WHERE id = ?", (author,)).fetchone()
+        name = get_name(author)
         if written_by:
             entries += f"<p>written by {name}<br>"
-        target = db.execute("SELECT People.name FROM Targets INNER JOIN People ON People.id = Targets.target WHERE Targets.round_num = ? AND Targets.player_id = ?", (num, author)).fetchone()
+        target = db.execute("SELECT target FROM Targets WHERE round_num = ? AND player_id = ?", (num, author)).fetchone()
         if submitted_at:
             entries += f"submitted at {format_time(submitted_at)}<br>"
         if target:
             target ,= target
-            entries += f"impersonating {target}<br>"
+            entries += f"impersonating {get_name(target)}<br>"
         likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
         if num >= 13:
             entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
         entries += "<details><summary><strong>guesses</strong></summary><ul>"
-        for guesser, guess in db.execute("SELECT People1.name, People2.name FROM Guesses "
-                                         "INNER JOIN People AS People1 ON People1.id = Guesses.player_id "
-                                         "INNER JOIN People AS People2 ON People2.id = Guesses.guess "
-                                         "WHERE Guesses.round_num = ? AND Guesses.actual = ? ORDER BY People2.name", (num, author)):
+        for guesser, guess in sorted(db.execute("SELECT player_id, guess FROM Guesses WHERE round_num = ? AND actual = ?", (num, author)), key=lambda x: get_name(x[1])):
             if guess == name:
-                guess = f"<strong>{guess}</strong>"
+                guess = f"<strong>{get_name(guess)}</strong>"
             elif guess == target:
-                guess = f"<em>{guess}</em>"
-            entries += f"<li>{guess} (by {guesser})</li>"
+                guess = f"<em>{get_name(guess)}</em>"
+            else:
+                guess = get_name(guess)
+            entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details><br>"
     elif discord.authorized:
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
@@ -245,6 +247,17 @@ META = """
 <link rel="stylesheet" href="/main.css">
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
+
+def score_round(num):
+    lb = get_db().execute("""
+    SELECT author_id,
+           (SELECT COUNT(*) FROM Guesses WHERE player_id = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num),
+           (SELECT COUNT(*) FROM Guesses
+            INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
+            WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num),
+           (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num)
+    FROM Submissions WHERE round_num = ?""", (num,))
+    return ((author, plus+bonus-minus, plus, bonus, minus) for author, plus, bonus, minus in lb)
 
 @app.route("/<int:num>/")
 def show_round(num):
@@ -364,28 +377,19 @@ def show_round(num):
 """
         case 3:
             entries, style = render_submissions(db, num, True)
-            lb = db.execute("""
-            SELECT name, author_id,
-                   (SELECT COUNT(*) FROM Guesses WHERE player_id = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num),
-                   (SELECT COUNT(*) FROM Guesses
-                    INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
-                    WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num),
-                   (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num)
-            FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ?""", (num,))
             results = "<ol>"
-            for idx, t in rank_enumerate(lb, key=lambda t: (t[2]+t[3]-t[4], t[2], t[3])):
-                name, author, plus, bonus, minus = t
+            for idx, (author, total, plus, bonus, minus) in rank_enumerate(score_round(num), key=lambda t: t[1:4]):
                 bonus_s = f" ~{bonus}"*(num in (12, 13))
-                results += f'<li value="{idx}"><details><summary><strong>{name}</strong> +{plus}{bonus_s} -{minus} = {plus+bonus-minus}</summary><ol>'
-                for guess, actual, pos in db.execute("SELECT People1.name, People2.name, Submissions.position FROM Guesses "
-                                                "INNER JOIN People AS People1 ON People1.id = Guesses.guess "
-                                                "INNER JOIN People AS People2 ON People2.id = Guesses.actual "
-                                                "INNER JOIN Submissions ON Submissions.round_num = Guesses.round_num AND Submissions.author_id = Guesses.actual "
-                                                "WHERE Guesses.round_num = ? AND Guesses.player_id = ? ORDER BY Submissions.position", (num, author)):
+                results += f'<li value="{idx}"><details><summary><strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
+                for guess, actual, pos in db.execute(
+                    "SELECT guess, actual, position FROM Guesses "
+                    "INNER JOIN Submissions ON Submissions.round_num = Guesses.round_num AND Submissions.author_id = Guesses.actual "
+                    "WHERE Guesses.round_num = ? AND Guesses.player_id = ? ORDER BY Submissions.position", (num, author)
+                ):
                     if guess == actual:
-                        results += f'<li value="{pos}"><strong>{actual}</strong></li>'
+                        results += f'<li value="{pos}"><strong>{get_name(actual)}</strong></li>'
                     else:
-                        results += f'<li value="{pos}">{guess} (was {actual})</li>'
+                        results += f'<li value="{pos}">{get_name(guess)} (was {get_name(actual)})</li>'
                 results += "</ol></details></li>"
             results += "</ol>"
             return f"""
@@ -474,32 +478,34 @@ def take(num):
 @app.route("/stats/")
 def stats():
     db = get_db()
-    lb = db.execute("""
-    WITH Finished AS (SELECT num FROM Rounds WHERE stage = 3)
-    SELECT name, (SELECT COUNT(*) FROM Guesses WHERE player_id = id AND guess = actual AND round_num IN Finished),
-                 (SELECT COUNT(*) FROM Guesses INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual WHERE actual = id AND guess = Targets.target AND Guesses.round_num IN Finished),
-                 (SELECT COUNT(*) FROM Guesses WHERE guess = id AND guess = actual AND round_num IN Finished),
-                 (SELECT COUNT(*) FROM Submissions WHERE author_id = id AND round_num IN Finished)
-    FROM People""")
+    lb = defaultdict(lambda: [0, 0, 0, 0, 0])
+    for num, in db.execute("SELECT num FROM Rounds WHERE stage = 3"):
+        for player, total, plus, bonus, minus in score_round(num):
+            p = lb[player]
+            for i, x in enumerate((total, plus, bonus, minus, 1)):
+                p[i] += x
+
     rows = ["rank", "player", "gain", "loss", "bonus", "total", "~total", "played", "avg score", "avg gain", "avg loss"]
     table = "<thead><tr>"
     for row in rows:
         table += f'<th scope="col">{row}</th>'
     table += "</tr></thead>"
-    e = list(rank_enumerate(lb, key=lambda t: t[1]+t[2]-t[3]))
-    for rank, (name, plus, bonus, minus, played) in e:
+
+    e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
+    for rank, (player, (total, plus, bonus, minus, played)) in e:
         if not played:
             continue
+        name = get_name(player)
         values = [
             rank,
             f'<a href="/stats/{name}">{name}</a>',
             plus,
             minus,
             bonus,
-            plus+bonus-minus,
+            total,
             plus-minus,
             played,
-            f"{(plus+bonus-minus)/played:.3f}",
+            f"{total/played:.3f}",
             f"{plus/played:.3f}",
             f"{minus/played:.3f}",
         ]
@@ -508,10 +514,10 @@ def stats():
             table += f"<td>{value}</td>"
         table += "</tr>"
     match [tuple(x[1]) for x in e if x[0] == 1]:
-        case [(name, plus, bonus, minus, _)]:
-            desc = f"{name} leads with {plus+bonus-minus} points."
-        case [(_, plus, bonus, minus, _), *xs]:
-            desc = f"{len(xs)+1} people lead with {plus+bonus-minus} points."
+        case [(name, (total, _, _, _, _))]:
+            desc = f"{name} leads with {total} points."
+        case [(_, (total, _, _, _, _)), *xs]:
+            desc = f"{len(xs)+1} people lead with {total} points."
     return f"""
 <!DOCTYPE html>
 <html>
