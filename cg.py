@@ -249,15 +249,31 @@ META = """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
 def score_round(num):
-    lb = get_db().execute("""
+    db = get_db()
+    lb = db.execute("""
     SELECT author_id,
-           (SELECT COUNT(*) FROM Guesses WHERE player_id = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num),
            (SELECT COUNT(*) FROM Guesses
             INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
             WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num),
            (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num)
     FROM Submissions WHERE round_num = ?""", (num,))
-    return ((author, plus+bonus-minus, plus, bonus, minus) for author, plus, bonus, minus in lb)
+    for author, bonus, minus in lb:
+        count = -1
+        guesses = dict(db.execute("SELECT guess, actual FROM Guesses WHERE player_id = ? AND round_num = ?", (author, num)))
+        while guesses:
+            path = [next(iter(guesses.keys()))]
+            while True:
+                try:
+                    n = guesses.pop(path[-1])
+                except KeyError:
+                    break
+                if n in path:
+                    count += 1
+                    break
+                else:
+                    path.append(n)
+        print("====")
+        yield (author, count+bonus-minus, count, bonus, minus)
 
 @app.route("/<int:num>/")
 def show_round(num):
