@@ -1,9 +1,12 @@
+import ctypes
 import functools
 import traceback
 import sqlite3
 import datetime
 import io
 import re
+import subprocess
+import tarfile
 import os
 from collections import defaultdict
 
@@ -163,6 +166,31 @@ def info():
 </html>
 """
 
+def make_tar(num, compression=""):
+    user_id = discord.fetch_user().id if discord.authorized else None
+    f = io.BytesIO()
+    with tarfile.open(mode=f"w:{compression}", fileobj=f) as tar:
+        for name, content, position in get_db().execute("SELECT name, content, position FROM Files "
+                                                        "INNER JOIN Submissions ON Submissions.round_num = Files.round_num AND Submissions.author_id = Files.author_id "
+                                                        "INNER JOIN Rounds ON Rounds.num = Files.round_num "
+                                                        "WHERE Files.round_num = ? AND (stage <> 1 OR Files.author_id = ?)", (num, user_id)):
+            info = tarfile.TarInfo(f"{num}/{position}/{name}")
+            info.size = len(content)
+            tar.addfile(info, io.BytesIO(content))
+    f.seek(0)
+    return f
+
+@app.route("/<int:num>.tar.bz2")
+def download_round_bzip2(num):
+    return flask.send_file(make_tar(num, "bz2"), as_attachment=True, download_name=f"{num}.tar.bz2")
+
+@app.route("/<int:num>.tar.bz3")
+def download_round_bzip3(num):
+    proc = subprocess.run(["bzip3", "-e"], input=make_tar(num).getvalue(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.returncode != 0:
+        raise Exception(f"bzip3: {proc.stderr}")
+    return flask.send_file(io.BytesIO(proc.stdout), as_attachment=True, download_name=f"{num}.tar.bz3")
+
 def get_name(i):
     return get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0]
 
@@ -220,7 +248,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
 
 def render_submissions(db, num, show_info):
     formatter = HtmlFormatter(style="monokai", linenos=True)
-    entries = ""
+    entries = f'<h1>entries</h1><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<h2 id="{position}">entry #{position}</h2>'
@@ -244,6 +272,7 @@ META = """
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
 <script src="/main.js" defer></script>
+<script src="https://unpkg.com/konami@1.6.3/konami.js"></script>
 <link rel="stylesheet" href="/main.css">
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
@@ -293,7 +322,7 @@ def show_round(num):
                 user = discord.fetch_user()
                 langs = db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id)).fetchall()
                 if langs:
-                    panel += '<h2>review</h2><form method="post"><input type="hidden" name="type" value="langs">'
+                    panel += f'<h2>review</h2><p><a id="download" href="/{num}.tar.bz2">download all</a></p><form method="post"><input type="hidden" name="type" value="langs">'
                     for name, lang in langs:
                         panel += f'<label for="{name}"><a href="/{num}/{name}">{name}</a></label> <select name="{name}" id="{name}">'
                         for language in LANGUAGES:

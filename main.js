@@ -76,9 +76,13 @@ function toggleSticky() {
     let list = guessPanel.classList;
     if (list.contains("sticky")) {
         list.remove("sticky");
-        stickyButton.innerHTML = "Rehide";
+        stickyButton.innerHTML = "Hide";
     } else {
         list.add("sticky");
         stickyButton.innerHTML = "Show";
     }
 }
+
+let download = document.getElementById("download");
+let egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
+egg.pattern = "788965";
