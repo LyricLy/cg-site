@@ -226,7 +226,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
     elif discord.authorized:
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
-    for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)):
+    for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
         name = bleach.clean(name)
         filetype = magic.from_buffer(content)
         # remove appalling attempts at guessing language
@@ -320,7 +320,7 @@ def show_round(num):
 </form>
 """
                 user = discord.fetch_user()
-                langs = db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id)).fetchall()
+                langs = db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ? ORDER BY name", (num, user.id)).fetchall()
                 if langs:
                     panel += f'<h2>review</h2><p><a id="download" href="/{num}.tar.bz2">download all</a></p><form method="post"><input type="hidden" name="type" value="langs">'
                     for name, lang in langs:
