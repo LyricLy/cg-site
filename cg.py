@@ -531,10 +531,10 @@ def stats():
             for i, x in enumerate((total, plus, bonus, minus, 1, TIEBREAKS.get(num, {}).get(player, rank) == 1)):
                 p[i] += x
 
-    rows = ["rank", "player", "gain", "loss", "bonus", "total", "~total", "played", "won", "avg score", "avg gain", "avg loss"]
+    cols = ["rank", "player", "total", "gain", "loss", "bonus", "~total", "played", "won", "avg score", "avg gain", "avg loss"]
     table = "<thead><tr>"
-    for row in rows:
-        table += f'<th scope="col">{row}</th>'
+    for col in cols:
+        table += f'<th scope="col">{col}</th>'
     table += "</tr></thead>"
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
@@ -545,10 +545,10 @@ def stats():
         values = [
             rank,
             f'<a href="/stats/{name}">{name}</a>',
+            total,
             plus,
             minus,
             bonus,
-            total,
             plus-minus,
             played,
             won,
