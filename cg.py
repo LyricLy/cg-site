@@ -239,7 +239,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
             if lang.startswith("iframe"):
                 url = "/files/" + lang.removeprefix("iframe ")
                 entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
-            elif lang == "png":
+            elif lang == "image":
                 entries += f'<img src="/{num}/{name}">'
             else:
                 entries += highlight(str(charset_normalizer.from_bytes(content).best()), get_lexer_by_name(lang), formatter)
@@ -264,7 +264,7 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = ["py", "rs", "bf", "hs", "c", "go", "zig", "d", "raku", "pony", "js", "apl", "sml", "vim", "befunge", "lua", "png", "text"]
+LANGUAGES = ["py", "rs", "bf", "hs", "c", "go", "zig", "d", "raku", "pony", "js", "apl", "sml", "vim", "befunge", "lua", "image", "text"]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
@@ -475,7 +475,7 @@ def take(num):
                     try:
                         guess = min(get_lexer_for_filename(file.filename).aliases, key=len)
                     except ClassNotFound:
-                        guess = "png" if file.filename.endswith(".png") else "text"
+                        guess = "image" if file.filename.lower().endswith((".png", ".jpg", ".jpeg")) else "text"
                     b = file.read()
                     if len(b) > 64*1024:
                         guess = None
