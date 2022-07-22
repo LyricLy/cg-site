@@ -562,7 +562,7 @@ def stats():
         table += "</tr>"
     match [tuple(x[1]) for x in e if x[0] == 1]:
         case [(name, (total, *_))]:
-            desc = f"{name} leads with {total} points."
+            desc = f"{get_name(name)} leads with {total} points."
         case [(_, (total, *_)), *xs]:
             desc = f"{len(xs)+1} people lead with {total} points."
     return f"""
