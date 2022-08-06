@@ -63,3 +63,16 @@ CREATE TABLE Targets (
     FOREIGN KEY (player_id, round_num) REFERENCES Submissions(author_id, round_num),
     FOREIGN KEY (target, round_num) REFERENCES Submissions(author_id, round_num)
 );
+
+CREATE TABLE Comments (
+    id INTEGER PRIMARY KEY,
+    round_num INTEGER NOT NULL,
+    parent INTEGER NOT NULL,
+    author_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    posted_at TIMESTAMP NOT NULL,
+    edited_at TIMESTAMP,
+    reply INTEGER,
+    anonymous INTEGER NOT NULL,
+    FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num)
+)

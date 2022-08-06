@@ -35,11 +35,7 @@ app.config |= {
     "SESSION_COOKIE_SECURE": True,
     "MAX_CONTENT_LENGTH": 32 * 1024 * 1024,
 }
-if "OAUTHLIB_INSECURE_TRANSPORT" in os.environ:
-    cb_url = "http://127.0.0.1:7000/callback"
-else:
-    cb_url = "https://cg.esolangs.gay/callback"
-discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, cb_url, config.bot_token)
+discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url, config.bot_token)
 
 
 def datetime_converter(value):
@@ -197,6 +193,15 @@ def get_name(i):
 def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
+def render_comments(db, num, parent, show_info):
+    rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
+    comments = f"<details><summary><strong>comments</strong> {len(rows)}</summary>"
+    comments += "<h3>post a comment</h3>"
+    if not discord.authorized:
+        comments += "<p>you must be logged in to post comments</p>"
+    else:
+        comments += ""
+
 def render_submission(db, formatter, row, show_info, written_by=True):
     author, num, submitted_at, position = row
     entries = ""
@@ -233,7 +238,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
         header = f'<a href="/{num}/{name}">{name}</a> <sub><em>{filetype}</em></sub>'
         if lang is None:
-            entries += f'<p>{header}</p>'
+            entries += f'{header}'
         else:
             entries += f'<details><summary>{header}</summary>'
             if lang.startswith("iframe"):
