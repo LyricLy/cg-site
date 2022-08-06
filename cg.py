@@ -8,6 +8,7 @@ import re
 import subprocess
 import tarfile
 import os
+import logging
 from collections import defaultdict
 
 import bleach
@@ -27,6 +28,7 @@ from pygments.util import ClassNotFound
 import config
 
 
+logging.basicConfig(filename=config.log_file, encoding="utf-8", format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", level=logging.INFO)
 app = flask.Flask(__name__)
 flask_minify.Minify(app=app)
 app.secret_key = config.secret_key
@@ -485,6 +487,7 @@ def take(num):
                     if len(b) > 64*1024:
                         guess = None
                     db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
+                logging.info(f"accepted files {', '.join(str(x.filename) for x in files)} from {user.id}")
             case ("langs", 1):
                 for key, value in form.items():
                     if key == "type":
@@ -494,15 +497,18 @@ def take(num):
                     db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
-                for position, guess in enumerate(form.getlist("guess"), start=1):
+                guesses = form.getlist("guess")
+                for position, guess in enumerate(guesses, start=1):
                     if int(guess) != user.id:
                         db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
+                logging.info(f"accepted guess {guesses} from {user.id}")
             case ("like", 2):
                 id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(form["position"]))).fetchone()
                 if form["checked"] == "true":
                     db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, id))
                 else:
                     db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id))
+                logging.info(f"{user.id} liked {id}")
             case _:
                 flask.abort(400)
     except Exception as e:
