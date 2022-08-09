@@ -74,5 +74,6 @@ CREATE TABLE Comments (
     edited_at TIMESTAMP,
     reply INTEGER,
     anonymous INTEGER NOT NULL,
-    FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num)
+    FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num),
+    FOREIGN KEY (reply) REFERENCES Comments(id)
 )
