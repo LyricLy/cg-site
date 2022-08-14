@@ -1,5 +1,5 @@
 function doUnit(s, ms, amount, unit) {
-    let u = Math.floor(ms / amount);
+    const u = Math.floor(ms / amount);
     if (u) {
         s.push(`${u} ${unit}${u > 1 ? "s" : ""}`);
     }
@@ -7,7 +7,7 @@ function doUnit(s, ms, amount, unit) {
 }
 
 for (const elem of document.getElementsByClassName("datetime")) {
-    let date = new Date(elem.innerHTML);
+    const date = new Date(elem.innerHTML);
     if (date < new Date()) {
         elem.innerHTML = date.toLocaleString();
         continue;
@@ -18,7 +18,7 @@ for (const elem of document.getElementsByClassName("datetime")) {
             elem.innerHTML = date.toLocaleString();
             return;
         }
-        let s = [];
+        const s = [];
         ms = doUnit(s, ms, 1000*60*60*24, "day");
         ms = doUnit(s, ms, 1000*60*60, "hour");
         ms = doUnit(s, ms, 1000*60, "minute");
@@ -43,7 +43,7 @@ function send(form) {
 
 let players = document.getElementById("players");
 if (players != null) {
-    var sortable = new Sortable(players, {
+    const sortable = new Sortable(players, {
         swap: true,
         swapClass: "highlight",
         animation: 100,
@@ -62,7 +62,7 @@ if (players != null) {
 
 for (const like of document.getElementsByClassName("like")) {
     like.addEventListener("change", debounced(() => {
-        let form = new FormData();
+        const form = new FormData();
         form.append("type", "like");
         form.append("position", like.getAttribute("like-pos"));
         form.append("checked", like.checked);
@@ -70,10 +70,10 @@ for (const like of document.getElementsByClassName("like")) {
     }))
 }
 
-let stickyButton = document.getElementById("sticky-button");
-let guessPanel = document.getElementById("guess-panel");
+const stickyButton = document.getElementById("sticky-button");
+const guessPanel = document.getElementById("guess-panel");
 function toggleSticky() {
-    let list = guessPanel.classList;
+    const list = guessPanel.classList;
     if (list.contains("sticky")) {
         list.remove("sticky");
         stickyButton.innerHTML = "Hide";
@@ -83,6 +83,6 @@ function toggleSticky() {
     }
 }
 
-let download = document.getElementById("download");
-let egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
+const download = document.getElementById("download");
+const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
 egg.pattern = "788965";
