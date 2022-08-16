@@ -275,7 +275,11 @@ def render_submission(db, formatter, row, show_info, written_by=True):
             elif lang == "image":
                 entries += f'<img src="/{num}/{name}">'
             else:
-                entries += highlight(str(charset_normalizer.from_bytes(content).best()), get_lexer_by_name(lang), formatter)
+                try:
+                    text = content.decode()
+                except UnicodeDecodeError:
+                    text = str(charset_normalizer.from_bytes(content).best())
+                entries += highlight(text, get_lexer_by_name(lang), formatter)
             entries += "</details>"
     return entries
 
