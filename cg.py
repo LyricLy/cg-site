@@ -257,7 +257,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
     elif discord.authorized:
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
-    entries += render_comments(db, num, author, show_info)
+    # entries += render_comments(db, num, author, show_info)
     entries += "<br>"
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
         name = bleach.clean(name)
