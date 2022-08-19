@@ -258,7 +258,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
     # entries += render_comments(db, num, author, show_info)
-    entries += "<br>"
+    # entries += "<br>"
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
         name = bleach.clean(name)
         filetype = magic.from_buffer(content)
@@ -266,7 +266,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
         header = f'<a href="/{num}/{name}">{name}</a> <sub><em>{filetype}</em></sub>'
         if lang is None:
-            entries += f'{header}'
+            entries += f'{header}<br>'
         else:
             entries += f'<details><summary>{header}</summary>'
             if lang.startswith("iframe"):
@@ -278,7 +278,8 @@ def render_submission(db, formatter, row, show_info, written_by=True):
                 try:
                     text = content.decode()
                 except UnicodeDecodeError:
-                    text = str(charset_normalizer.from_bytes(content).best())
+                    best = charset_normalizer.from_bytes(content).best()
+                    text = str(best) if best else "cg: couldn't decode file contents"
                 entries += highlight(text, get_lexer_by_name(lang), formatter)
             entries += "</details>"
     return entries
