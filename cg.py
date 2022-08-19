@@ -362,6 +362,8 @@ def show_round(num):
                 if langs:
                     panel += f'<h2>review</h2><p><a id="download" href="/{num}.tar.bz2">download all</a></p><form method="post"><input type="hidden" name="type" value="langs">'
                     for name, lang in langs:
+                        if lang == "none":
+                            lang = None
                         panel += f'<label for="{name}"><a href="/{num}/{name}">{name}</a></label> <select name="{name}" id="{name}">'
                         for language in LANGUAGES:
                             selected = " selected"*(language == lang)
