@@ -35,7 +35,7 @@ app.secret_key = config.secret_key
 app.config |= {
     "SESSION_COOKIE_HTTPONLY": False,
     "SESSION_COOKIE_SECURE": True,
-    "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
+    "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,
 }
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url, config.bot_token)
 
