@@ -253,7 +253,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
             else:
                 guess = get_name(guess)
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
-        entries += "</ul></details>"
+        entries += "</ul></details><br>"
     elif discord.authorized:
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
