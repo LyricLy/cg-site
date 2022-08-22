@@ -42,8 +42,9 @@ function send(form) {
 }
 
 let players = document.getElementById("players");
+let sortable;
 if (players != null) {
-    const sortable = new Sortable(players, {
+    sortable = new Sortable(players, {
         swap: true,
         swapClass: "highlight",
         animation: 100,
@@ -86,3 +87,18 @@ function toggleSticky() {
 const download = document.getElementById("download");
 const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
 egg.pattern = "788965";
+
+function shuffleGuesses() {
+	let order = sortable.toArray();
+	for (let i = order.length - 1; i > 0; i--) {
+		if (order[i] == "me") continue;
+		let j;
+		while (true) {
+			j = Math.floor(Math.random() * (i + 1));
+			if (order[j] != "me") break;
+		}
+		[order[i], order[j]] = [order[j], order[i]];
+	}
+	sortable.sort(order, true);
+	sortable.option("onSort")();
+}

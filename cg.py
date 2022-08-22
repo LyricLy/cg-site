@@ -404,7 +404,7 @@ def show_round(num):
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _ in query):
-                panel = '<div id="guess-panel"><button onclick="toggleSticky()" id="sticky-button">Hide</button><h2>guess</h2><ol id="players">'
+                panel = '<div id="guess-panel"><button onclick="toggleSticky()" id="sticky-button">Hide</button><h2>guess <button onclick="shuffleGuesses()">🔀</button></h2><ol id="players">'
                 for idx, (id, name, pos) in enumerate(query):
                     if id == your_id:
                         query.pop(idx)
@@ -412,7 +412,7 @@ def show_round(num):
                         break
                 for id, name, _ in query:
                     if id == your_id:
-                        panel += f'<li data-id="{id}" class="player you">{name} (you!)</li>'
+                        panel += f'<li data-id="me" class="player you">{name} (you!)</li>'
                     else:
                         panel += f'<li data-id="{id}" class="player">↕ {name}</li>'
                 panel += "</ol></div>"
@@ -534,7 +534,7 @@ def take(num):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
                 guesses = form.getlist("guess")
                 for position, guess in enumerate(guesses, start=1):
-                    if int(guess) != user.id:
+                    if guess != "me":
                         db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
                 logging.info(f"accepted guess {guesses} from {user.id}")
             case ("like", 2):
