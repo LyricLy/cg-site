@@ -404,7 +404,7 @@ def show_round(num):
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _ in query):
-                panel = '<div id="guess-panel"><button onclick="toggleSticky()" id="sticky-button">Hide</button><h2>guess <button onclick="shuffleGuesses()">🔀</button></h2><ol id="players">'
+                panel = '<div id="guess-panel"><button onclick="toggleSticky()" id="sticky-button">Hide</button><h2>guess <button onclick="shuffleGuesses()" title="Shuffle guesses">🔀</button></h2><ol id="players">'
                 for idx, (id, name, pos) in enumerate(query):
                     if id == your_id:
                         query.pop(idx)
