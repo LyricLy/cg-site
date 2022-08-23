@@ -32,6 +32,10 @@ h1, h2 {
     line-height: 1.2;
 }
 
+a {
+	text-decoration: none;
+}
+
 #guess-panel {
     float: right;
     top: 10px;
