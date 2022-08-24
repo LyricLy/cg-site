@@ -543,21 +543,26 @@ TIEBREAKS = {
 @app.route("/stats/")
 def stats():
     db = get_db()
-    lb = defaultdict(lambda: [0, 0, 0, 0, 0, 0])
-    for num, in db.execute("SELECT num FROM Rounds WHERE stage = 3"):
+    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3").fetchall()
+    lb = defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
+    for num, in rounds:
+        likers, = db.execute("SELECT COUNT(DISTINCT player_id) FROM Likes WHERE round_num = ?", (num,)).fetchone()
         for rank, (player, total, plus, bonus, minus) in score_round(num):
             p = lb[player]
             for i, x in enumerate((total, plus, bonus, minus, 1, TIEBREAKS.get(num, {}).get(player, rank) == 1)):
                 p[i] += x
+            p[7] += likers
+    for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes GROUP BY liked"):
+        lb[player][6] += count
 
-    cols = ["rank", "player", "total", "gain", "loss", "bonus", "~total", "played", "won", "avg score", "avg gain", "avg loss"]
+    cols = ["rank", "player", "total", "gain", "loss", "bonus", "~total", "played", "won", "avg score", "avg gain", "avg loss", "likes", "popularity"]
     table = "<thead><tr>"
     for col in cols:
         table += f'<th scope="col">{col}</th>'
     table += "</tr></thead>"
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
-    for rank, (player, (total, plus, bonus, minus, played, won)) in e:
+    for rank, (player, (total, plus, bonus, minus, played, won, likes, likers_seen)) in e:
         if not played:
             continue
         name = get_name(player)
@@ -574,6 +579,8 @@ def stats():
             f"{total/played:.3f}",
             f"{plus/played:.3f}",
             f"{minus/played:.3f}",
+            likes,
+            f"{likes/likers_seen:.3f}" if likers_seen else -1
         ]
         table += "<tr>"
         for value in values:
