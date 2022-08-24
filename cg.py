@@ -203,31 +203,6 @@ def anon_name(id, num, cond):
     pos, = r
     return f'[author of <a href="#{pos}">#{pos}</a>]'
 
-def render_comments(db, num, parent, show_info):
-    rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
-    comments = f"<details open><summary><strong>comments</strong> {len(rows)}</summary>"
-    # id, *round_num, *parent, *author_id, content, posted_at, edited_at, *reply, *anonymous
-    for row in rows:
-        name = anon_name(row["author_id"], num, row["anonymous"] and not show_info) or get_name(row["author_id"])
-        comments += f'<div id="c{row["id"]}"><strong>{name}</strong><sub>'
-        if r := row["reply"]:
-            replied, = db.execute("SELECT author_id FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
-            comments += f' <a href="#c{r}">replying</a> to <strong>{replied}</strong>'
-        comments += f' &bull; a href="#c{row["id"]}">permalink</a></sub> <p>{row["content"]}</p></div>'
-    comments += "<h3>post a comment</h3>"
-    if not discord.authorized:
-        comments += "<p>you must be logged in to post comments</p>"
-    else:
-        user = discord.fetch_user()
-        comments += f'<form method="post"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">'
-        if anon := anon_name(user.id, num, not show_info):
-            comments += f'<select name="anon"><option value="no" selected>{anon}</option><option value="yes">{user.username}</option></select>'
-        else:
-            comments += f'<strong>{user.username}</strong>'
-        comments += '<p><textarea name="content" rows="3" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p>'
-    return comments
-
-
 def render_submission(db, formatter, row, show_info, written_by=True):
     author, num, submitted_at, position = row
     entries = ""
@@ -257,8 +232,6 @@ def render_submission(db, formatter, row, show_info, written_by=True):
     elif discord.authorized:
         checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
-    # entries += render_comments(db, num, author, show_info)
-    # entries += "<br>"
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
         name = bleach.clean(name)
         filetype = magic.from_buffer(content)
