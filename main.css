@@ -16,8 +16,9 @@ p + ul {
     margin-top: -10px;
 }
 
-:not(div) > pre, code {
+:not(div) > pre, :not(pre) > code {
     background-color: #EEE;
+    white-space: pre-wrap;
 }
 
 pre {
