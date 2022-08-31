@@ -18,6 +18,7 @@ import mistune
 import flask
 import flask_minify
 import flask_discord
+import yarl
 from flask_discord import requires_authorization as auth
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
@@ -234,10 +235,16 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
         name = bleach.clean(name)
-        filetype = magic.from_buffer(content)
-        # remove appalling attempts at guessing language
-        filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
-        header = f'<a href="/{num}/{name}">{name}</a> <sub><em>{filetype}</em></sub>'
+        if str(lang).startswith("external"):
+            url = lang.removeprefix("external ")
+            filetype = f"external link to {yarl.URL(url).host}"
+            lang = None
+        else:
+            url = f"/{num}/{name}"
+            filetype = magic.from_buffer(content)
+            # remove appalling attempts at guessing language
+            filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
+        header = f'<a href="{url}">{name}</a> <sub><em>{filetype}</em></sub>'
         if lang is None:
             entries += f'{header}<br>'
         else:
