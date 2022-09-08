@@ -194,7 +194,7 @@ def download_round_bzip3(num):
     return flask.send_file(io.BytesIO(proc.stdout), as_attachment=True, download_name=f"{num}.tar.bz3")
 
 def get_name(i):
-    return get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0]
+    return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
 
 def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
