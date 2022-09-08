@@ -108,6 +108,13 @@ function resize(element) {
     element.style.height = element.scrollHeight+"px";
 }
 
+function considerSubmit(event) {
+    if (event.which == 13 && !event.shiftKey) {
+        event.preventDefault();
+        event.target.form.submit();
+    }
+}
+
 function un(element) {
     element.parentElement.parentElement.removeChild(element.parentElement);
 }

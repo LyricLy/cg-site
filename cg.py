@@ -257,7 +257,7 @@ def render_comments(db, num, parent, show_info):
         else:
             comments += f'as <strong>{user.username}</strong>'
         comments += f'<span class="extra"></span>'
-        comments += '<p><textarea class="comment-content" name="content" oninput="resize(this)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
+        comments += '<p><textarea class="comment-content" name="content" oninput="resize(this)" onkeypress="considerSubmit(event)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
     comments += "</div></details>"
     return comments
 
