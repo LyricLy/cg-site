@@ -237,7 +237,6 @@ def render_comments(db, num, parent, show_info):
         if discord.authorized:
             user = discord.fetch_user()
             delete = False
-            extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
             if row["author_id"] != user.id:
                 extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
             else:
