@@ -65,7 +65,7 @@ CREATE TABLE Targets (
 );
 
 CREATE TABLE Comments (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     round_num INTEGER NOT NULL,
     parent INTEGER NOT NULL,
     author_id INTEGER NOT NULL,
@@ -76,4 +76,4 @@ CREATE TABLE Comments (
     anonymous INTEGER NOT NULL,
     FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num),
     FOREIGN KEY (reply) REFERENCES Comments(id)
-)
+);

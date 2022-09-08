@@ -102,3 +102,31 @@ function shuffleGuesses() {
     sortable.sort(order, true);
     sortable.option("onSort")();
 }
+
+function resize(element) {
+    element.style.height = "1px";
+    element.style.height = element.scrollHeight+"px";
+}
+
+function un(element) {
+    element.parentElement.parentElement.removeChild(element.parentElement);
+}
+
+const unner = '<button type="button" onclick="un(this)">[x]</button>'
+
+function edit(id, parent, content, anonymous, replyId) {
+    const panel = document.getElementById("post-" + parent);
+    if (panel.anon) panel.anon.value = anonymous ? "yes" : "no";
+    panel.content.value = content;
+    const extra = panel.querySelector(".extra");
+    extra.innerHTML = ` <span class="edit">editing <a href="#c${id}">#${id}</a> ${unner}<input type="hidden" name="edit" value="${id}"></span>`
+    if (replyId) reply(replyId, parent);
+}
+
+function reply(id, parent) {
+    const panel = document.getElementById("post-" + parent);
+    const extra = panel.querySelector(".extra");
+    const reply = extra.querySelector(".reply");
+    if (reply) extra.removeChild(reply);
+    extra.innerHTML += ` <span class="reply">replying to <a href="#c${id}">#${id}</a> ${unner}<input type="hidden" name="reply" value="${id}"></span>`
+}

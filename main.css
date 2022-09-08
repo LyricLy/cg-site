@@ -83,3 +83,36 @@ a {
         color: #55CDFC;
     }
 }
+
+:target {
+   background-color: #ffa;
+}
+
+.comments {
+    background-color: #fbfaf9;
+    padding: 0.5em 1em;
+    border-left: 2px solid #333;
+}
+
+.comments>:first-child {
+    margin-top: 8px;
+}
+
+.comments>:last-child {
+    margin-bottom: 8px;
+}
+
+.comment p {
+    margin-top: 8px;
+}
+
+.comment-content {
+    height: 18px;
+    overflow: hidden;
+    font-family: sans-serif;
+    resize: none;
+}
+
+.delete-button {
+    display: inline;
+}

@@ -5,9 +5,11 @@ import sqlite3
 import datetime
 import io
 import re
+import requests
 import subprocess
 import tarfile
 import os
+import json
 import logging
 from collections import defaultdict
 
@@ -39,6 +41,7 @@ app.config |= {
     "MAX_CONTENT_LENGTH": 16 * 1024 * 1024,
 }
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url, config.bot_token)
+markdown = mistune.create_markdown(plugins=["strikethrough", "table", "footnotes"])
 
 
 def datetime_converter(value):
@@ -148,7 +151,7 @@ def credits():
 @app.route("/info")
 def info():
     with open("info.md") as f:
-        m = mistune.html(f.read())
+        m = markdown(f.read())
     return f"""
 <!DOCTYPE html>
 <html>
@@ -196,36 +199,67 @@ def get_name(i):
 def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
-def anon_name(id, num, cond):
+def anon_name(db, id, num, cond):
     if not cond:
         return None
-    if not (r := db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, row["author_id"])).fetchone()):
+    if not (r := db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, id)).fetchone()):
         return None
     pos, = r
     return f'[author of <a href="#{pos}">#{pos}</a>]'
 
+def pass_to_js(*args):
+    s = ""
+    for arg in args:
+        s += json.dumps(arg).replace('"', '&quot;')
+        s += ","
+    return s
+
+def dm(person, content):
+    headers = {"Authorization": f"Bot {config.bot_token}", "Content-Type": "application/json"}
+    try:
+        data = requests.post("https://discord.com/api/v10/users/@me/channels", headers=headers, json={"recipient_id": str(person)}).json()
+        requests.post(f"https://discord.com/api/v10/channels/{data['id']}/messages", headers=headers, json={"content": content})
+    except Exception as e:
+        # there's nowhere for errors to go
+        logging.exception("DM failed, too bad")
+
 def render_comments(db, num, parent, show_info):
     rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
-    comments = f"<details open><summary><strong>comments</strong> {len(rows)}</summary>"
-    # id, *round_num, *parent, *author_id, content, posted_at, edited_at, *reply, *anonymous
+    comments = f'<details {"open"*bool(rows)}><summary><strong>comments</strong> {len(rows)}</summary><div class="comments">'
     for row in rows:
-        name = anon_name(row["author_id"], num, row["anonymous"] and not show_info) or get_name(row["author_id"])
-        comments += f'<div id="c{row["id"]}"><strong>{name}</strong><sub>'
+        name = anon_name(db, row["author_id"], num, row["anonymous"] and not show_info) or get_name(row["author_id"])
+        comments += f'<div id="c{row["id"]}" class="comment"><strong>{name}</strong> '
+        extras = []
         if r := row["reply"]:
             replied, = db.execute("SELECT author_id FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
-            comments += f' <a href="#c{r}">replying</a> to <strong>{replied}</strong>'
-        comments += f' &bull; a href="#c{row["id"]}">permalink</a></sub> <p>{row["content"]}</p></div>'
+            extras.append(f'<a href="#c{r}"><em>replying to <strong>{get_name(replied)}</strong></em></a>')
+        extras.append(f'<a href="#c{row["id"]}">¶</a>')
+        if discord.authorized:
+            user = discord.fetch_user()
+            delete = False
+            extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
+            if row["author_id"] != user.id:
+                extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
+            else:
+                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(row["parent"]), row["content"], row["anonymous"], row["reply"])})">edit</button>')
+                delete = True
+            if delete or user.id == 319753218592866315:
+                extras.append(f'<form method="post" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
+        comments += ' '.join(extras)
+        comments += f'{markdown(row["content"])}</div><hr>'
     comments += "<h3>post a comment</h3>"
     if not discord.authorized:
-        comments += "<p>you must be logged in to post comments</p>"
+        comments += f"<p>{LOGIN_BUTTON}</p>"
     else:
         user = discord.fetch_user()
-        comments += f'<form method="post"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">'
-        if anon := anon_name(user.id, num, not show_info):
-            comments += f'<select name="anon"><option value="no" selected>{anon}</option><option value="yes">{user.username}</option></select>'
+        comments += f'<form method="post" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">'
+        if anon := anon_name(db, user.id, num, not show_info):
+            comments += f'as <select name="anon"><option value="yes" selected>{anon}</option><option value="no">{user.username}</option></select>'
         else:
-            comments += f'<strong>{user.username}</strong>'
-        comments += '<p><textarea name="content" rows="3" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p>'
+            comments += f'as <strong>{user.username}</strong>'
+        comments += f'<span class="extra"></span>'
+        comments += '<p><textarea class="comment-content" name="content" oninput="resize(this)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
+    comments += "</div></details>"
     return comments
 
 
@@ -395,7 +429,7 @@ def show_round(num):
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
     <h2>specification</h2>
-    {mistune.html(rnd['spec'])}
+    {markdown(rnd['spec'])}
     <h2>submit</h2>
     <p>{dict(enumerate(flask.get_flashed_messages())).get(0, "")}</p>
     {panel}
@@ -450,7 +484,7 @@ def show_round(num):
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
     <h2>specification</h2>
-    {mistune.html(rnd['spec'])}
+    {markdown(rnd['spec'])}
     {panel}
     {entries}
   </body>
@@ -489,7 +523,7 @@ def show_round(num):
     <h1>code guessing, round #{num} (completed)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 at {format_time(rnd['stage2_at'])}; ended at {format_time(rnd['ended_at'])}</p>
     <h2>specification</h2>
-    {mistune.html(rnd['spec'])}
+    {markdown(rnd['spec'])}
     <h2>results</h2>
     {results}
     {entries}
@@ -510,6 +544,7 @@ def take(num):
         flask.abort(403)
     if user.id != 356107472269869058:
         db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
+    anchor = None
     try:
         match (form["type"], rnd["stage"]):
             case ("upload", 1):
@@ -551,6 +586,48 @@ def take(num):
                 else:
                     db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id))
                 logging.info(f"{user.id} liked {id}")
+            case ("comment", 2 | 3):
+                parent = int(form["parent"])
+                anon = form.get("anon") == "yes"
+                reply = int(form["reply"]) if "reply" in form else None
+                content = form["content"]
+                time = datetime.datetime.now(datetime.timezone.utc)
+                if edit := form.get("edit"):
+                    owner, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (edit,)).fetchone()
+                    if user.id != owner:
+                        flask.abort(403)
+                    db.execute("UPDATE Comments SET content = ?, edited_at = ?, reply = ?, anonymous = ? WHERE id = ?", (content, time, reply, anon, edit))
+                    anchor = f"c{edit}"
+                    logging.info(f"{user.id} edited their comment {edit} (anon: {anon}, reply: {reply}): {content}")
+                else:
+                    id, = db.execute(
+                        "INSERT INTO Comments (round_num, parent, author_id, content, posted_at, reply, anonymous) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                        (num, parent, user.id, content, time, reply, anon)
+                    ).fetchone()
+                    anchor = f"c{id}"
+                    logging.info(f"{user.id} commented on {parent} (id: {id}, anon: {anon}, reply: {reply}): {content}")
+                    source = get_name(user.id) if not anon else "someone"
+                    msg = f"at <https://cg.esolangs.gay/{num}#c{id}>:\n{content}"
+                    reply_author = None
+                    if reply:
+                        reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
+                        pos, = db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, parent)).fetchone()
+                        dm(reply_author, f"{source} replied to your comment on entry #{pos} {msg}")
+                    if reply_author != parent:
+                        dm(parent, f"{source} commented on your submission {msg}")
+            case ("delete-comment", 2 | 3):
+                id = form["id"]
+                owner, pos = db.execute(
+                    "SELECT Comments.author_id, position FROM Comments INNER JOIN Submissions ON Submissions.round_num = Comments.round_num AND Submissions.author_id = parent WHERE id = ?",
+                    (id,)
+                ).fetchone()
+                if user.id not in (owner, 319753218592866315):
+                    flask.abort(403)
+                # prevent dangling replies
+                db.execute("UPDATE Comments SET reply = NULL WHERE reply = ?", (id,))
+                db.execute("DELETE FROM Comments WHERE id = ?", (id,))
+                anchor = str(pos)
+                logging.info(f"{user.id} deleted their comment {id}")
             case _:
                 flask.abort(400)
     except Exception as e:
@@ -560,7 +637,7 @@ def take(num):
         db.commit()
     finally:
         db.rollback()
-        return flask.redirect(flask.url_for("show_round", num=num))
+        return flask.redirect(flask.url_for("show_round", num=num, _anchor=anchor))
 
 # TODO consider moving into DB
 TIEBREAKS = {
