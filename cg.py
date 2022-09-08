@@ -541,8 +541,7 @@ def take(num):
     form = flask.request.form
     if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}"):
         flask.abort(403)
-    if user.id != 356107472269869058:
-        db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
+    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
     anchor = None
     try:
         match (form["type"], rnd["stage"]):
