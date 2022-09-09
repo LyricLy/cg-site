@@ -253,7 +253,7 @@ def render_comments(db, num, parent, show_info):
         user = discord.fetch_user()
         comments += f'<form method="post" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">'
         if anon := anon_name(db, user.id, num, not show_info):
-            comments += f'as <select name="anon"><option value="yes" selected>{anon}</option><option value="no">{user.username}</option></select>'
+            comments += f'as <select name="anon"><option value="no" selected>{user.username}</option><option value="yes">{anon}</option></select>'
         else:
             comments += f'as <strong>{user.username}</strong>'
         comments += f'<span class="extra"></span>'
