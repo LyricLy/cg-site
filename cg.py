@@ -609,9 +609,10 @@ def take(num):
                     reply_author = None
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
-                        pos, = db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, parent)).fetchone()
-                        dm(reply_author, f"{source} replied to your comment on entry #{pos} {msg}")
-                    if reply_author != parent:
+                        if reply_author != user.id:
+                            pos, = db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, parent)).fetchone()
+                            dm(reply_author, f"{source} replied to your comment on entry #{pos} {msg}")
+                    if parent not in (reply_author, user.id):
                         dm(parent, f"{source} commented on your submission {msg}")
             case ("delete-comment", 2 | 3):
                 id = form["id"]
