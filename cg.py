@@ -75,7 +75,7 @@ def root():
 
 @app.route("/index/")
 def index():
-    rounds = "<ul>" + "".join(f"<li><a href='/{n}/'>round {n}</a></li>" for n, in get_db().execute("SELECT num FROM Rounds ORDER BY num")) + "</ul>"
+    rounds = "<ul>" + "".join(f"<li><a href='/{n}/'>round {n}</a></li>" for n, in get_db().execute("SELECT num FROM Rounds ORDER BY num DESC")) + "</ul>"
     return f"""
 <!DOCTYPE html>
 <html>
