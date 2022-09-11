@@ -658,7 +658,7 @@ TIEBREAKS = {
 @app.route("/stats/")
 def stats():
     db = get_db()
-    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3").fetchall()
+    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num <= ?", (flask.request.args.get("round", float("inf")),)).fetchall()
     lb = defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
     for num, in rounds:
         likers, = db.execute("SELECT COUNT(DISTINCT player_id) FROM Likes WHERE round_num = ?", (num,)).fetchone()
@@ -722,6 +722,9 @@ def stats():
     <h1>code guessing stats</h1>
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
+    <form>
+      as of round <input name="round" type="number" value="{len(rounds)}" min="1"> <button type="submit">go</button>
+    </form>
     <table class="sortable">{table}</table>
   </body>
 </html>

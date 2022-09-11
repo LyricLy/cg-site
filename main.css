@@ -37,6 +37,10 @@ a {
     text-decoration: none;
 }
 
+input[type="number"] {
+    width: 3em;
+}
+
 #guess-panel {
     float: right;
     top: 10px;
