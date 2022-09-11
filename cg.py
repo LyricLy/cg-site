@@ -658,7 +658,8 @@ TIEBREAKS = {
 @app.route("/stats/")
 def stats():
     db = get_db()
-    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num <= ?", (flask.request.args.get("round", float("inf")),)).fetchall()
+    before_round = float(flask.request.args.get("round", float("inf")))
+    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num <= ?", (before_round,)).fetchall()
     lb = defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
     for num, in rounds:
         likers, = db.execute("SELECT COUNT(DISTINCT player_id) FROM Likes WHERE round_num = ?", (num,)).fetchone()
@@ -667,10 +668,10 @@ def stats():
             for i, x in enumerate((total, plus, bonus, minus, 1, TIEBREAKS.get(num, {}).get(player, rank) == 1)):
                 p[i] += x
             p[7] += likers
-    for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes GROUP BY liked"):
+    for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num <= ? GROUP BY liked", (before_round,)):
         lb[player][6] += count
 
-    cols = ["rank", "player", "total", "gain", "loss", "bonus", "~total", "played", "won", "avg score", "avg gain", "avg loss", "likes", "popularity"]
+    cols = ["rank", "player", "total", "gain", "loss", *["bonus", "~total"]*(before_round >= 12), "played", "won", "avg score", "avg gain", "avg loss", *["likes", "popularity"]*(before_round >= 13)]
     table = "<thead><tr>"
     for col in cols:
         table += f'<th scope="col">{col}</th>'
@@ -687,15 +688,15 @@ def stats():
             total,
             plus,
             minus,
-            bonus,
-            plus-minus,
+            *[bonus,
+            plus-minus]*(before_round >= 12),
             played,
             won,
             f"{total/played:.3f}",
             f"{plus/played:.3f}",
             f"{minus/played:.3f}",
-            likes,
-            f"{likes/likers_seen:.3f}" if likers_seen else -1
+            *[likes,
+            f"{likes/likers_seen:.3f}" if likers_seen else -1]*(before_round >= 13),
         ]
         table += "<tr>"
         for value in values:
