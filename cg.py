@@ -75,7 +75,9 @@ def root():
 
 @app.route("/index/")
 def index():
-    rounds = "<ul>" + "".join(f"<li><a href='/{n}/'>round {n}</a></li>" for n, in get_db().execute("SELECT num FROM Rounds ORDER BY num DESC")) + "</ul>"
+    nums = get_db().execute("SELECT num, ended_at FROM Rounds ORDER BY num DESC").fetchall()
+    last, at = nums[0]
+    rounds = "<ul>" + f"<li>round {last+1} at {format_time(at+datetime.timedelta(days=3))}</li>"*bool(at) + "".join(f"<li><a href='/{n}/'>round {n}</a></li>" for n, _ in nums) + "</ul>"
     return f"""
 <!DOCTYPE html>
 <html>
