@@ -27,6 +27,8 @@ pre {
 
 code {
     font-size: 14px;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 h1, h2 {
