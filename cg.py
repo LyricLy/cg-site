@@ -348,6 +348,7 @@ LANGUAGES = ["py", "rs", "bf", "hs", "c", "go", "zig", "d", "raku", "pony", "js"
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta content="website" property="og:type">
 <meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
 <meta content="Esolangs" property="og:site_name">
