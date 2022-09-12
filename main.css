@@ -27,6 +27,9 @@ pre {
 
 code {
     font-size: 14px;
+}
+
+:not(pre) > code {
     white-space: nowrap;
     display: inline-block;
 }
