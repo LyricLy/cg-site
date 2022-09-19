@@ -201,13 +201,13 @@ def get_name(i):
 def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
-def anon_name(db, id, num, cond):
+def anon_name(db, id, num, parent, cond):
     if not cond:
         return None
     if not (r := db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, id)).fetchone()):
         return None
     pos, = r
-    return f'[author of <a href="#{pos}">#{pos}</a>]'
+    return f'[author of <a href="#{pos}">#{pos}</a>]' if id != parent else "[submission author]"
 
 def pass_to_js(*args):
     s = ""
@@ -229,12 +229,13 @@ def render_comments(db, num, parent, show_info):
     rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
     comments = f'<details {"open"*bool(rows)}><summary><strong>comments</strong> {len(rows)}</summary><div class="comments">'
     for row in rows:
-        name = anon_name(db, row["author_id"], num, row["anonymous"] and not show_info) or get_name(row["author_id"])
+        name = anon_name(db, row["author_id"], num, parent, row["anonymous"] and not show_info) or get_name(row["author_id"])
         comments += f'<div id="c{row["id"]}" class="comment"><strong>{name}</strong> '
         extras = []
         if r := row["reply"]:
-            replied, = db.execute("SELECT author_id FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
-            extras.append(f'<a href="#c{r}"><em>replying to <strong>{get_name(replied)}</strong></em></a>')
+            replied, replied_anon = db.execute("SELECT author_id, anonymous FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
+            replied_name = anon_name(db, replied, num, parent, replied_anon and not show_info) or get_name(replied)
+            extras.append(f'<a href="#c{r}"><em>replying to <strong>{replied_name}</strong></em></a>')
         extras.append(f'<a href="#c{row["id"]}">¶</a>')
         if discord.authorized:
             user = discord.fetch_user()
@@ -254,7 +255,7 @@ def render_comments(db, num, parent, show_info):
     else:
         user = discord.fetch_user()
         comments += f'<form method="post" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">'
-        if anon := anon_name(db, user.id, num, not show_info):
+        if anon := anon_name(db, user.id, num, parent, not show_info):
             comments += f'as <select name="anon"><option value="no" selected>{user.username}</option><option value="yes">{anon}</option></select>'
         else:
             comments += f'as <strong>{user.username}</strong>'
