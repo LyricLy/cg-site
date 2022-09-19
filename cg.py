@@ -407,9 +407,7 @@ def show_round(num):
                     for name, lang in langs:
                         panel += f'<label for="{name}"><a href="/{num}/{name}">{name}</a></label> <select name="{name}" id="{name}">'
                         for language in LANGUAGES:
-                            if language == "none":
-                                language = None
-                            selected = " selected"*(language == lang)
+                            selected = " selected"*(language == lang or language == "none" and not lang)
                             panel += f'<option value="{language}"{selected}>{language}</option>'
                         panel += "</select><br>"
                     panel += '<input type="submit" value="change languages"></form>'
