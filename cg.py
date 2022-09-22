@@ -446,7 +446,7 @@ def show_round(num):
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _, _ in query):
-                panel = '<div id="guess-panel"><button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button><h2>guess <button onclick="shuffleGuesses()" title="Shuffle guesses">🔀</button></h2><ol id="players">'
+                panel = '<div id="guess-panel"><button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button><h2>guess <button onclick="shuffleGuesses()" title="shuffle guesses">🔀</button></h2><ol id="players">'
                 for idx, (id, name, pos, locked) in enumerate(query):
                     if id == your_id:
                         query.pop(idx)
@@ -456,7 +456,8 @@ def show_round(num):
                     if id == your_id:
                         panel += f'<li data-id="me" class="player you locked">{name} (you!)</li>'
                     else:
-                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}">↕ {name} <button class="toggle lock-button" ontoggle="lock(this)" alt="🔓"{" toggleValue"*bool(locked)}>🔒</button></li>'
+                        lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔓"{" toggleValue"*bool(locked)}>🔒</button>'
+                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}">↕ {name} {lock_button}</li>'
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
