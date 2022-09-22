@@ -584,7 +584,6 @@ def take(num):
                 logging.info(f"accepted guess {guesses} from {user.id}")
             case ("like", 2):
                 for pos in form.getlist("position"):
-                    print(pos)
                     id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(pos))).fetchone()
                     checked = db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id)).fetchone()
                     if checked:
