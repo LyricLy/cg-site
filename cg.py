@@ -460,7 +460,7 @@ def show_round(num):
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
-                for _, name, _ in query:
+                for _, name, _, _ in query:
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
                 if not discord.authorized:
