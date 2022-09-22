@@ -41,47 +41,76 @@ function send(form) {
     fetch("", { method: "POST", body: form, redirect: "manual" });
 }
 
-let players = document.getElementById("players");
+const players = document.getElementById("players");
 let sortable;
 if (players != null) {
     sortable = new Sortable(players, {
         swap: true,
         swapClass: "highlight",
         animation: 100,
-        filter: '.you',
-        onMove: (evt) => !evt.related.classList.contains("you"),
+        filter: '.locked',
+        onMove: (evt) => !evt.related.classList.contains("locked"),
         onSort: debounced(() => {
             let form = new FormData();
             form.append("type", "guess");
-            for (const id of sortable.toArray()) {
-                form.append("guess", id);
+            for (const player of players.children) {
+                const id = player.getAttribute("data-id");
+                if (player.classList.contains("you")) {
+                    form.append("guess", "me");
+                } else if (player.classList.contains("locked")) {
+                    form.append("guess", id + "-locked");
+                } else {
+                    form.append("guess", id);
+                }
             }
             send(form);
         }),
     });
 }
 
-for (const like of document.getElementsByClassName("like")) {
-    like.addEventListener("change", debounced(() => {
-        const form = new FormData();
-        form.append("type", "like");
-        form.append("position", like.getAttribute("like-pos"));
-        form.append("checked", like.checked);
-        send(form);
-    }))
+function swapAlt(elem) {
+    const alt = elem.getAttribute("alt");
+    elem.setAttribute("alt", elem.innerHTML);
+    elem.innerHTML = alt;
 }
 
-const stickyButton = document.getElementById("sticky-button");
+for (const button of document.getElementsByClassName("toggle")) {
+    if (button.hasAttribute("toggleValue")) swapAlt(button);
+    button.addEventListener("click", () => {
+        swapAlt(button);
+        button.toggleValue = !button.toggleValue;
+        button.dispatchEvent(new Event("toggle"));
+    })
+}
+
 const guessPanel = document.getElementById("guess-panel");
 function toggleSticky() {
-    const list = guessPanel.classList;
-    if (list.contains("sticky")) {
-        list.remove("sticky");
-        stickyButton.innerHTML = "Hide";
-    } else {
-        list.add("sticky");
-        stickyButton.innerHTML = "Show";
+    guessPanel.classList.toggle("sticky");
+}
+
+const likeToggles = new Set();
+
+const sender = debounced(() => {
+    if (!likeToggles.size) return;
+    const form = new FormData();
+    form.append("type", "like");
+    for (const pos of likeToggles) {
+        form.append("position", pos);
     }
+    likeToggles.clear();
+    send(form);
+});
+
+function onLike(pos) {
+    if (!likeToggles.delete(pos)) {
+        likeToggles.add(pos);
+    }
+    sender();
+}
+
+function lock(elem) {
+    elem.parentElement.classList.toggle("locked");
+    sortable.option("onSort")();
 }
 
 const download = document.getElementById("download");
@@ -89,17 +118,17 @@ const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3
 egg.pattern = "788965";
 
 function shuffleGuesses() {
-    let order = sortable.toArray();
+    let order = Array.from(players.children);
     for (let i = order.length - 1; i > 0; i--) {
-        if (order[i] == "me") continue;
+        if (order[i].classList.contains("locked")) continue;
         let j;
         while (true) {
             j = Math.floor(Math.random() * (i + 1));
-            if (order[j] != "me") break;
+            if (!order[j].classList.contains("locked")) break;
         }
         [order[i], order[j]] = [order[j], order[i]];
     }
-    sortable.sort(order, true);
+    sortable.sort(order.map(x => x.getAttribute("data-id")), true);
     sortable.option("onSort")();
 }
 

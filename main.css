@@ -68,6 +68,17 @@ input[type="number"] {
     float: right;
 }
 
+.lock-button {
+    float: right;
+    margin-left: 5px;
+}
+
+[alt="like"], [alt="🔒"] {
+    border-radius: 10px;
+    border-color: #ff5800;
+    background-color: white;
+}
+
 .highlight {
     color: #F7A8B8;
 }
@@ -75,6 +86,10 @@ input[type="number"] {
 .player {
     border: 1px solid #000;
     padding: 10px;
+}
+
+.locked {
+    background-color: #fbfaf9;
 }
 
 .you {

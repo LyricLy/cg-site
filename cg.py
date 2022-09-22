@@ -292,8 +292,8 @@ def render_submission(db, formatter, row, show_info, written_by=True):
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details>"
     elif discord.authorized:
-        checked = " checked"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
-        entries += f'<p><label>like? <input type="checkbox" class="like" like-pos="{position}"{checked}></label></p>'
+        checked = " toggleValue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
+        entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
     for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
@@ -440,23 +440,23 @@ def show_round(num):
         case 2:
             entries, style = render_submissions(db, num, False)
             your_id = discord.fetch_user().id if discord.authorized else None
-            query = db.execute("SELECT People.id, People.name, Submissions.position FROM Submissions "
+            query = db.execute("SELECT People.id, People.name, Submissions.position, locked FROM Submissions "
                                "INNER JOIN People ON People.id = Submissions.author_id "
                                "LEFT JOIN (Guesses INNER JOIN Submissions as Submissions2 ON Submissions2.round_num = Guesses.round_num AND Guesses.actual = Submissions2.author_id) "
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
-            if discord.authorized and any(id == your_id for id, _, _ in query):
-                panel = '<div id="guess-panel"><button onclick="toggleSticky()" id="sticky-button">Hide</button><h2>guess <button onclick="shuffleGuesses()" title="Shuffle guesses">🔀</button></h2><ol id="players">'
-                for idx, (id, name, pos) in enumerate(query):
+            if discord.authorized and any(id == your_id for id, _, _, _ in query):
+                panel = '<div id="guess-panel"><button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button><h2>guess <button onclick="shuffleGuesses()" title="Shuffle guesses">🔀</button></h2><ol id="players">'
+                for idx, (id, name, pos, locked) in enumerate(query):
                     if id == your_id:
                         query.pop(idx)
-                        query.insert(pos-1, (id, name, pos))
+                        query.insert(pos-1, (id, name, pos, locked))
                         break
-                for id, name, _ in query:
+                for id, name, _, locked in query:
                     if id == your_id:
-                        panel += f'<li data-id="me" class="player you">{name} (you!)</li>'
+                        panel += f'<li data-id="me" class="player you locked">{name} (you!)</li>'
                     else:
-                        panel += f'<li data-id="{id}" class="player">↕ {name}</li>'
+                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}">↕ {name} <button class="toggle lock-button" ontoggle="lock(this)" alt="🔓"{" toggleValue"*bool(locked)}>🔒</button></li>'
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
@@ -577,15 +577,21 @@ def take(num):
                 guesses = form.getlist("guess")
                 for position, guess in enumerate(guesses, start=1):
                     if guess != "me":
-                        db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(guess), num, position))
+                        insert = guess.removesuffix("-locked")
+                        locked = insert != guess
+                        db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id, ? FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(insert), locked, num, position))
                 logging.info(f"accepted guess {guesses} from {user.id}")
             case ("like", 2):
-                id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(form["position"]))).fetchone()
-                if form["checked"] == "true":
-                    db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, id))
-                else:
-                    db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id))
-                logging.info(f"{user.id} liked {id}")
+                for pos in form.getlist("position"):
+                    print(pos)
+                    id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(pos))).fetchone()
+                    checked = db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id)).fetchone()
+                    if checked:
+                        db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id))
+                        logging.info(f"{user.id} unliked {id}")
+                    else:
+                        db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, id))
+                        logging.info(f"{user.id} liked {id}")
             case ("comment", 2 | 3):
                 parent = int(form["parent"])
                 anon = form.get("anon") == "yes"

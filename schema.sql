@@ -38,6 +38,7 @@ CREATE TABLE Guesses (
     player_id INTEGER NOT NULL,
     guess INTEGER NOT NULL,
     actual INTEGER NOT NULL,
+    locked INTEGER NOT NULL DEFAULT 0,
     UNIQUE (round_num, player_id, guess),
     UNIQUE (round_num, player_id, actual),
     CHECK (player_id <> guess AND player_id <> actual),
