@@ -12,7 +12,7 @@ for (const elem of document.getElementsByClassName("datetime")) {
         elem.innerHTML = date.toLocaleString();
         continue;
     }
-    let f = () => {
+    const f = () => {
         let ms = date - new Date();
         if (ms < 0) {
             elem.innerHTML = date.toLocaleString();
@@ -51,7 +51,7 @@ if (players != null) {
         filter: '.locked',
         onMove: (evt) => !evt.related.classList.contains("locked"),
         onSort: debounced(() => {
-            let form = new FormData();
+            const form = new FormData();
             form.append("type", "guess");
             for (const player of players.children) {
                 const id = player.getAttribute("data-id");
@@ -118,7 +118,7 @@ const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3
 egg.pattern = "788965";
 
 function shuffleGuesses() {
-    let order = Array.from(players.children);
+    const order = Array.from(players.children);
     for (let i = order.length - 1; i > 0; i--) {
         if (order[i].classList.contains("locked")) continue;
         let j;

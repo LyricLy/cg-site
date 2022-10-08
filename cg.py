@@ -102,7 +102,7 @@ def download_file(num, name):
                          "WHERE Files.round_num = ? AND Files.name = ? AND (Rounds.stage <> 1 OR Files.author_id = ?)", (num, name, user_id)).fetchone()
     if not f:
         flask.abort(404)
-    return flask.send_file(io.BytesIO(f[0]), as_attachment=True, download_name=name, mimetype="application/octet-stream")
+    return flask.send_file(io.BytesIO(f[0]), mimetype="application/octet-stream")
 
 @app.route("/files/<name>")
 def download_file_available_for_public_access(name):
@@ -317,6 +317,8 @@ def render_submission(db, formatter, row, show_info, written_by=True):
                 entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
             elif lang == "image":
                 entries += f'<img src="/{num}/{name}">'
+            elif lang == "pdf":
+                entries += f'<object type="application/pdf" data="/{num}/{name}" width="1280" height="720"></object>'
             else:
                 try:
                     text = content.decode()
