@@ -37,6 +37,14 @@ I recommend you make friends in high places if you'd like to influence the resul
 ### Likes
 During the guessing phase, you can also click the tickbox next to a name to vote that you like that entry. You can like as many entries as you, well, like. At the end, the game will add up how many likes each entry got. That's like, separate to your score from guessing though. There's no prize but pride.
 
+## Plagiarism
+Although it's not very interesting, taking code from third-party sources is usually allowed. However, there is an exception to this. There are 3 criteria for code to count as illegally plagiarised:
+- The code was written after the challenge for the round was announced
+- The code was written by a member of Esolangs
+- The author of the code is not the one who submitted it
+
+If your submission contains any code that meets all of these criteria, it is subject to disqualification.
+
 ## Anonymity
 If you have a question or a comment, you might want to say it anonymously. We have a bot that can relay messages to people and channels, without displaying your real username.
 
