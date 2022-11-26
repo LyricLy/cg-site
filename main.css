@@ -42,6 +42,13 @@ a {
     text-decoration: none;
 }
 
+th {
+    background-clip: padding-box;
+    background-color: white;
+    position: sticky;
+    top: 0;
+}
+
 input[type="number"] {
     width: 3em;
 }
