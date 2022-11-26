@@ -662,6 +662,9 @@ TIEBREAKS = {
     23: {
         156021301654454272: 2,
     },
+    28: {
+        356107472269869058: 2,
+    },
 }
 
 @app.route("/stats/")
@@ -669,16 +672,18 @@ def stats():
     db = get_db()
     before_round = float(flask.request.args.get("round", float("inf")))
     rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num <= ?", (before_round,)).fetchall()
-    lb = defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
+    lb = defaultdict(lambda: [0]*9)
     for num, in rounds:
         likers, = db.execute("SELECT COUNT(DISTINCT player_id) FROM Likes WHERE round_num = ?", (num,)).fetchone()
-        for rank, (player, total, plus, bonus, minus) in score_round(num):
+        players = list(score_round(num))
+        for rank, (player, total, plus, bonus, minus) in players:
             p = lb[player]
-            for i, x in enumerate((total, plus, bonus, minus, 1, TIEBREAKS.get(num, {}).get(player, rank) == 1)):
+            won = TIEBREAKS.get(num, {}).get(player, rank) == 1
+            for i, x in enumerate((total, plus, bonus, minus, 1, won, won*len(players))):
                 p[i] += x
-            p[7] += likers
+            p[-1] += likers
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num <= ? GROUP BY liked", (before_round,)):
-        lb[player][6] += count
+        lb[player][-2] += count
 
     cols = ["rank", "player", "total", "gain", "loss", *["bonus", "~total"]*(before_round >= 12), "played", "won", "avg score", "avg gain", "avg loss", *["likes", "popularity"]*(before_round >= 13)]
     table = "<thead><tr>"
@@ -687,7 +692,7 @@ def stats():
     table += "</tr></thead>"
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
-    for rank, (player, (total, plus, bonus, minus, played, won, likes, likers_seen)) in e:
+    for rank, (player, (total, plus, bonus, minus, played, won, vp, likes, likers_seen)) in e:
         if not played:
             continue
         name = get_name(player)
