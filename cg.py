@@ -678,8 +678,7 @@ def stats():
         players = list(score_round(num))
         for rank, (player, total, plus, bonus, minus) in players:
             p = lb[player]
-            won = TIEBREAKS.get(num, {}).get(player, rank) == 1
-            for i, x in enumerate((total, plus, bonus, minus, 1, won, won*len(players))):
+            for i, x in enumerate((total, plus, bonus, minus, 1, TIEBREAKS.get(num, {}).get(player, rank) == 1, sum([1 for their_rank, _ in players if their_rank > rank]))):
                 p[i] += x
             p[-1] += likers
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num <= ? GROUP BY liked", (before_round,)):
