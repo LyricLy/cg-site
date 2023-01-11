@@ -78,7 +78,7 @@ def index():
     nums = get_db().execute("SELECT num, ended_at, spec FROM Rounds ORDER BY num DESC").fetchall()
     last, at, _ = nums[0]
     rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({spec.split('**', 2)[1]})</li>" for n, _, spec in nums)
-    rounds = "<ul>" + (f"<li>round {last+1} at {format_time(at+datetime.timedelta(days=3))}</li>" if at else "") + rounds + "</ul>"
+    rounds = "<ul>" + (f"<li>round {last+1} next year</li>" if at else "") + rounds + "</ul>"
     return f"""
 <!DOCTYPE html>
 <html>
@@ -545,7 +545,7 @@ def take(num):
         flask.abort(404)
     user = discord.fetch_user()
     form = flask.request.form
-    if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}") and "user" not in discord.bot_request(f"/guilds/1047299292492206101/members/{user.id}"):
+    if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}"):
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
     anchor = None
