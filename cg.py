@@ -563,8 +563,10 @@ def take(num):
                     except ClassNotFound:
                         guess = "image" if file.filename.lower().endswith((".png", ".jpg", ".jpeg")) else "text"
                     b = file.read()
-                    if len(b) > 64*1024 or guess not in LANGUAGES:
+                    if len(b) > 64*1024:
                         guess = None
+                    elif guess not in LANGUAGES:
+                        guess = "text"
                     db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
                 logging.info(f"accepted files {', '.join(str(x.filename) for x in files)} from {user.id}")
             case ("langs", 1):
