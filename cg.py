@@ -139,12 +139,10 @@ def credits():
     <ul>
       <li>umnikos - inital concept</li>
       <li>ubq323 - creating the original ruleset and hosting the first 5 rounds</li>
-      <li>HelloBoi - helping host round 4</li>
-      <li>deadbraincoral - helping host round 4</li>
+      <li>HelloBoi, deadbraincoral - helping host round 4</li>
       <li>sonata «pathétique» - helping host the first 5 rounds</li>
       <li>LyricLy - rule amendments, bot development, site development, and hosting round 6 and onwards</li>
-      <li>RocketRace - site ideas</li>
-      <li>Palaiologos - providing additional direction</li>
+      <li>RocketRace, olus2000, Palaiologos - ideas and advice</li>
       <li>IFcoltransG - writing the info page</li>
       <li>the players - designing the rounds and writing the submissions</li>
     </ul>
