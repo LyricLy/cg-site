@@ -413,6 +413,7 @@ def show_round(num):
     if num > 1:
         top_elems.append(f'<a href="/{num-1}/">prev</a>')
     top_elems.append('<a href="/index">index</a>')
+    top_elems.append('<a href="/info">info</a>')
     if db.execute("SELECT * FROM Rounds WHERE num = ?", (num+1,)).fetchone():
         top_elems.append(f'<a href="/{num+1}">next</a>')
     top = " &bull; ".join(top_elems)
