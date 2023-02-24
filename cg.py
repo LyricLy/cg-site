@@ -285,7 +285,7 @@ def render_files(db, formatter, num, author, lang_dropdowns=False):
         if lang_dropdowns:
             header += f' <select name="{name}" id="{name}">'
             for language in LANGUAGES:
-                selected = " selected"*(language == lang or language == "none" and not lang)
+                selected = " selected"*(LANGMAP.get(language, language) == lang)
                 header += f'<option value="{language}"{selected}>{language}</option>'
             header += "</select><br>"
         if lang is None:
@@ -362,7 +362,17 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = ["py", "rs", "bf", "hs", "c", "cpp", "go", "zig", "d", "raku", "pony", "js", "ts", "apl", "sml", "ocaml", "f#", "vim", "sh", "befunge", "lua", "erlang", "sed", "ada", "none", "image", "text"]
+LANGUAGES = ["py", "rs", "b", "hs", "c", "cpp", "go", "zig", "d", "raku", "pony", "js", "ts", "apl", "sml", "ml", "fs", "vim", "sh", "bf", "lua", "erl", "sed", "ada", "none", "img", "txt"]
+LANGMAP = {
+    "bf": "befunge",
+    "b": "bf",
+    "fs": "f#",
+    "erl": "erlang",
+    "ml": "ocaml",
+    "img": "image",
+    "txt": "text",
+    "none": None,
+}
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
@@ -593,8 +603,7 @@ def take(num):
                         continue
                     if value not in LANGUAGES:
                         flask.abort(400)
-                    if value == "none":
-                        value = None
+                    value = LANGMAP.get(value, value)
                     db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
