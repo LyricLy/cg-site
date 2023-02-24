@@ -268,6 +268,48 @@ def render_comments(db, num, parent, show_info):
     return comments
 
 
+def render_files(db, formatter, num, author, lang_dropdowns=False):
+    files = ""
+    for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
+        name = bleach.clean(name)
+        if str(lang).startswith("external"):
+            url = lang.removeprefix("external ")
+            filetype = f"external link to {yarl.URL(url).host}"
+            lang = None
+        else:
+            url = f"/{num}/{name}"
+            filetype = magic.from_buffer(content)
+            # remove appalling attempts at guessing language
+            filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
+        header = f'<a href="{url}">{name}</a> <sub><em>{filetype}</em></sub>'
+        if lang_dropdowns:
+            header += f' <select name="{name}" id="{name}">'
+            for language in LANGUAGES:
+                selected = " selected"*(language == lang or language == "none" and not lang)
+                header += f'<option value="{language}"{selected}>{language}</option>'
+            header += "</select><br>"
+        if lang is None:
+            files += f'{header}<br>'
+        else:
+            files += f'<details><summary>{header}</summary>'
+            if lang.startswith("iframe"):
+                url = "/files/" + lang.removeprefix("iframe ")
+                files += f'<iframe src="{url}" width="1280" height="720"></iframe>'
+            elif lang == "image":
+                files += f'<img src="/{num}/{name}">'
+            elif lang == "pdf":
+                files += f'<object type="application/pdf" data="/{num}/{name}" width="1280" height="720"></object>'
+            else:
+                try:
+                    text = content.decode()
+                except UnicodeDecodeError:
+                    best = charset_normalizer.from_bytes(content).best()
+                    text = str(best) if best else "cg: couldn't decode file contents"
+                files += highlight(text, get_lexer_by_name(lang), formatter)
+            files += "</details>"
+    return files
+
+
 def render_submission(db, formatter, row, show_info, written_by=True):
     author, num, submitted_at, position = row
     entries = ""
@@ -299,37 +341,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
-    for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
-        name = bleach.clean(name)
-        if str(lang).startswith("external"):
-            url = lang.removeprefix("external ")
-            filetype = f"external link to {yarl.URL(url).host}"
-            lang = None
-        else:
-            url = f"/{num}/{name}"
-            filetype = magic.from_buffer(content)
-            # remove appalling attempts at guessing language
-            filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
-        header = f'<a href="{url}">{name}</a> <sub><em>{filetype}</em></sub>'
-        if lang is None:
-            entries += f'{header}<br>'
-        else:
-            entries += f'<details><summary>{header}</summary>'
-            if lang.startswith("iframe"):
-                url = "/files/" + lang.removeprefix("iframe ")
-                entries += f'<iframe src="{url}" width="1280" height="720"></iframe>'
-            elif lang == "image":
-                entries += f'<img src="/{num}/{name}">'
-            elif lang == "pdf":
-                entries += f'<object type="application/pdf" data="/{num}/{name}" width="1280" height="720"></object>'
-            else:
-                try:
-                    text = content.decode()
-                except UnicodeDecodeError:
-                    best = charset_normalizer.from_bytes(content).best()
-                    text = str(best) if best else "cg: couldn't decode file contents"
-                entries += highlight(text, get_lexer_by_name(lang), formatter)
-            entries += "</details>"
+    entries += render_files(db, formatter, num, author)
     return entries
 
 def render_submissions(db, num, show_info):
@@ -397,6 +409,7 @@ def show_round(num):
 
     match rnd["stage"]:
         case 1:
+            formatter = HtmlFormatter(style="monokai", linenos=True)
             if discord.authorized:
                 panel = """
 <form method="post" enctype="multipart/form-data">
@@ -407,16 +420,18 @@ def show_round(num):
 </form>
 """
                 user = discord.fetch_user()
+                files = render_files(db, formatter, num, user.id, lang_dropdowns=True)
                 langs = db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ? ORDER BY name", (num, user.id)).fetchall()
-                if langs:
-                    panel += f'<h2>review</h2><p><a id="download" href="/{num}.tar.bz2">download all</a></p><form method="post"><input type="hidden" name="type" value="langs">'
-                    for name, lang in langs:
-                        panel += f'<label for="{name}"><a href="/{num}/{name}">{name}</a></label> <select name="{name}" id="{name}">'
-                        for language in LANGUAGES:
-                            selected = " selected"*(language == lang or language == "none" and not lang)
-                            panel += f'<option value="{language}"{selected}>{language}</option>'
-                        panel += "</select><br>"
-                    panel += '<input type="submit" value="change languages"></form>'
+                if files:
+                    panel += f"""
+<h2>review</h2>
+<p><a id="download" href="/{num}.tar.bz2">download all</a></p>
+<form method="post">
+  <input type="hidden" name="type" value="langs">
+  {files}
+  <input type="submit" value="change languages">
+</form>
+"""
             else:
                 panel = LOGIN_BUTTON
             submit_by = rnd['stage2_at'] or rnd['started_at']+datetime.timedelta(days=7)
@@ -429,6 +444,7 @@ def show_round(num):
     <meta content="code guessing #{num}/1" property="og:title">
     <meta content="{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
+    <style>{formatter.get_style_defs(".code")}</style>
   </head>
   <body>
     {top}
