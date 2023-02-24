@@ -432,7 +432,6 @@ def show_round(num):
 """
                 user = discord.fetch_user()
                 files = render_files(db, formatter, num, user.id, lang_dropdowns=True)
-                langs = db.execute("SELECT name, lang FROM Files WHERE round_num = ? AND author_id = ? ORDER BY name", (num, user.id)).fetchall()
                 if files:
                     panel += f"""
 <h2>review</h2>
