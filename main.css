@@ -12,6 +12,10 @@ body {
     color: #333;
 }
 
+small {
+    font-size: 13px;
+}
+
 p + ul {
     margin-top: -10px;
 }

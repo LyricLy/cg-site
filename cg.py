@@ -279,7 +279,7 @@ def render_files(db, formatter, num, author, lang_dropdowns=False):
             filetype = magic.from_buffer(content)
             # remove appalling attempts at guessing language
             filetype = re.sub(r"^.+? (?:source|script), |(?<=text) executable", "", filetype)
-        header = f'<a href="{url}">{name}</a> <sub><em>{filetype}</em></sub>'
+        header = f'<a href="{url}">{name}</a> <small><em>{filetype}</em></small>'
         if lang_dropdowns:
             header += f' <select name="{name}" id="{name}">'
             for language in LANGUAGES:
