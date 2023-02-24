@@ -134,6 +134,7 @@ def credits():
     <meta content="https://cg.esolangs.gay/credits" property="og:url">
   </head>
   <body>
+    <a href="/index">index</a>
     <h1>credits and acknowledgements</h1>
     <ul>
       <li>umnikos - inital concept</li>
@@ -166,6 +167,7 @@ def info():
     <meta content="https://cg.esolangs.gay/info" property="og:url">
   </head>
   <body>
+    <a href="/index">index</a>
     {m}
   </body>
 </html>
@@ -740,6 +742,7 @@ def stats():
     <style>th, td {{ border: 1px solid; padding: 4px; }} table {{ border-collapse: collapse; }}</style>
   </head>
   <body>
+    <a href="/index">index</a>
     <h1>code guessing stats</h1>
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
@@ -777,6 +780,7 @@ def user_stats(player):
     <style>{formatter.get_style_defs(".code")}</style>
   </head>
   <body>
+    <a href="/stats">all stats</a>
     <h1>{player}'s stats</h1>
     <h2>entries</h2>
     {s}
