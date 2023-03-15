@@ -717,7 +717,7 @@ def stats():
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num <= ? GROUP BY liked", (before_round,)):
         lb[player][-2] += count
 
-    cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "played", "won", "tot/r", "+/r", "-/r", *["likes", "pop"]*(before_round >= 13)]
+    cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "in", "won", "tot/r", "+/r", "-/r", *["likes", "pop"]*(before_round >= 13)]
     table = "<thead><tr>"
     for col in cols:
         table += f'<th scope="col">{col}</th>'
