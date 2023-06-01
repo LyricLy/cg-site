@@ -48,11 +48,13 @@ If your submission contains any code that meets all of these criteria, it is sub
 ## Anonymity
 If you have a question or a comment, you might want to say it anonymously. We have a bot that can relay messages to people and channels, without displaying your real username.
 
-If you __message `@Esobot#0987` the command `!anon event-discussion`__, then your messages sent to the bot will be forwarded to the `#event-discussion` channel by Esobot. You can put any channel name or username instead of `event-discussion`. You'll be assigned a random Toki Pona name like "jan Sasun" or "jan Papan", and the messages you send to Esobot will be stripped of all punctuation and converted to lowercase before they arrive.
+If you __message `@Esobot#0987` the command `!anon event-discussion`__, then your messages sent to the bot will be forwarded to the `#event-discussion` channel by Esobot. You can also put someone's username instead of `event-discussion` to speak to them privately. By default, you'll be assigned a random Toki Pona name like "jan Sasun" or "jan Papan", and the messages you send to Esobot will be stripped of all punctuation and converted to lowercase before they arrive. You can change name or turn off the message translation using the bot or by visiting this site's [anon settings page](/anon).
 
-Once you're done communicating anonymously, send `!anon stop` or `!anon leave` to Esobot. Your randomly generated name is usually reset between each round, but you can also ask `@LyricLy#9345` to do so manually if you do something foolish. Be warned that if you use the anonymity for rulebreaking mischief, the server admins do have the ability to unmask you; so don't break rules.
+Once you're done communicating anonymously, send `!anon stop` or `!anon leave` to Esobot. Your randomly generated name is usually reset between each round, but you have the option of switching to other names through the bot or site. Be warned that if you use the anonymity for mischief, the server admins do have the ability to unmask you.
 
-If you have a message you don't want stripped of punctuation/capitalisation, type a backslash `\` at the start of the message. You can also block particular users from messaging you anonymously or opt out altogether — type `!help anon` for more info.
+If you have a message you don't want stripped of punctuation/capitalisation, type a backslash `\` at the start of the message.
+
+Those are the basics, but the bot has a few more features as well, which you can find out about through `!help anon` or by checking out the [anonymous settings page](/anon). Happy hiding!
 
 ## Culture
 

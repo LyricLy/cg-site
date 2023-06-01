@@ -5,7 +5,6 @@ import sqlite3
 import datetime
 import io
 import re
-import requests
 import subprocess
 import tarfile
 import os
@@ -17,6 +16,7 @@ import bleach
 import charset_normalizer
 import magic
 import mistune
+import requests
 import flask
 import flask_minify
 import flask_discord
@@ -40,7 +40,7 @@ app.config |= {
     "SESSION_COOKIE_SECURE": True,
     "MAX_CONTENT_LENGTH": 4 * 1024 * 1024,
 }
-discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url, config.bot_token)
+discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url)
 markdown = mistune.create_markdown(plugins=["strikethrough", "table", "footnotes"])
 
 
@@ -90,7 +90,7 @@ def index():
     <title>cg index</title>
   </head>
   <body>
-    <p><a href="/stats/">stats</a> &bull; <a href="/info">info</a> &bull; <a href="/credits">credits</a></p>
+    <p><a href="/stats/">stats</a> &bull; <a href="/info">info</a> &bull; <a href="/credits">credits</a> &bull; <a href="/anon">anon settings</a></p>
     {rounds}
   </body>
 </html>
@@ -202,13 +202,15 @@ def get_name(i):
 def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
-def anon_name(db, id, num, parent, cond):
-    if not cond:
-        return None
-    if not (r := db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, id)).fetchone()):
-        return None
-    pos, = r
-    return f'[author of <a href="#{pos}">#{pos}</a>]' if id != parent else "[submission author]"
+def persona_name(author, persona, d={}):
+    return d.get(persona) or d.setdefault(persona, get_name(author) if persona == -1 else bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
+
+def fetch_personas():
+    if not hasattr(flask.g, "d"):
+        flask.g.d = {}
+    d = flask.g.d
+    user = discord.fetch_user().id
+    return d.get(user) or d.setdefault(user, [{"id": -1, "name": get_name(user)}, *requests.get(config.canon_url + f"/users/{user}/personas").json()])
 
 def pass_to_js(*args):
     s = ""
@@ -217,51 +219,38 @@ def pass_to_js(*args):
         s += ","
     return s
 
-def dm(person, content):
-    headers = {"Authorization": f"Bot {config.bot_token}", "Content-Type": "application/json"}
-    try:
-        data = requests.post("https://discord.com/api/v10/users/@me/channels", headers=headers, json={"recipient_id": str(person)}).json()
-        requests.post(f"https://discord.com/api/v10/channels/{data['id']}/messages", headers=headers, json={"content": content})
-    except Exception as e:
-        # there's nowhere for errors to go
-        logging.exception("DM failed, too bad")
-
 def render_comments(db, num, parent, show_info):
     rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
     comments = f'<details {"open"*bool(rows)}><summary><strong>comments</strong> {len(rows)}</summary><div class="comments">'
     for row in rows:
-        name = anon_name(db, row["author_id"], num, parent, row["anonymous"] and not show_info) or get_name(row["author_id"])
-        comments += f'<div id="c{row["id"]}" class="comment"><strong>{name}</strong> '
+        comments += f'<div id="c{row["id"]}" class="comment"><strong>{persona_name(row["author_id"], row["persona"])}</strong>'
+        if row["og_persona"]:
+            comments += f'<span class="tooltip">*<span class="tooltip-inner">known at the time as <strong>{persona_name(row["author_id"], row["og_persona"])}</strong></span></span>'
         extras = []
         if r := row["reply"]:
-            replied, replied_anon = db.execute("SELECT author_id, anonymous FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
-            replied_name = anon_name(db, replied, num, parent, replied_anon and not show_info) or get_name(replied)
-            extras.append(f'<a href="#c{r}"><em>replying to <strong>{replied_name}</strong></em></a>')
+            replied, their_persona = db.execute("SELECT author_id, persona FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
+            extras.append(f'<a href="#c{r}"><em>replying to <strong>{persona_name(replied, their_persona)}</strong></em></a>')
         extras.append(f'<a href="#c{row["id"]}">¶</a>')
         if discord.authorized:
             user = discord.fetch_user()
-            delete = False
-            if row["author_id"] != user.id:
+            owns = row["author_id"] == user.id
+            if not owns:
                 extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
             else:
-                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(row["parent"]), row["content"], row["anonymous"], row["reply"])})">edit</button>')
-                delete = True
-            if delete or user.id == 319753218592866315:
-                extras.append(f'<form method="post" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
-        comments += ' '.join(extras)
+                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(row["parent"]), row["content"], row["persona"], row["reply"])})">edit</button>')
+            if owns or user.id == 319753218592866315:
+                extras.append(f'<form method="post" action="/{num}/" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
+        comments += ' ' + ' '.join(extras)
         comments += f'{markdown(row["content"])}</div><hr>'
     comments += "<h3>post a comment</h3>"
     if not discord.authorized:
         comments += f"<p>{LOGIN_BUTTON}</p>"
     else:
         user = discord.fetch_user()
-        comments += f'<form method="post" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">'
-        if anon := anon_name(db, user.id, num, parent, not show_info):
-            comments += f'as <select name="anon"><option value="no" selected>{user.username}</option><option value="yes">{anon}</option></select>'
-        else:
-            comments += f'as <strong>{user.username}</strong>'
-        comments += f'<span class="extra"></span>'
-        comments += '<p><textarea class="comment-content" name="content" oninput="resize(this)" onkeypress="considerSubmit(event)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
+        comments += f'<form method="post" action="/{num}/" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">as <select name="persona">'
+        for idx, persona in enumerate(fetch_personas()):
+            comments += f'<option value="{persona["id"]}" {" selected"*(not idx)}>{persona["name"]}</option>'
+        comments += '</select><span class="extra"></span><p><textarea class="comment-content" name="content" oninput="resize(this)" onkeypress="considerSubmit(event)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
     comments += "</div></details>"
     return comments
 
@@ -345,7 +334,7 @@ def render_submission(db, formatter, row, show_info, written_by=True):
 def render_submissions(db, num, show_info):
     formatter = HtmlFormatter(style="monokai", linenos=True)
     entries = f'<h1>entries</h1><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
-    for r in db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<h2 id="{position}">entry #{position}</h2>'
         entries += render_submission(db, formatter, r, show_info)
@@ -461,7 +450,7 @@ def show_round(num):
     <h2>specification</h2>
     {markdown(rnd['spec'])}
     <h2>submit</h2>
-    <p>{dict(enumerate(flask.get_flashed_messages())).get(0, "")}</p>
+    <p>{m[0] if (m := flask.get_flashed_messages()) else ""}</p>
     {panel}
   </body>
 </html>
@@ -571,7 +560,7 @@ def take(num):
         flask.abort(404)
     user = discord.fetch_user()
     form = flask.request.form
-    if "user" not in discord.bot_request(f"/guilds/346530916832903169/members/{user.id}"):
+    if not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
     anchor = None
@@ -581,7 +570,7 @@ def take(num):
                 files = [x for x in flask.request.files.getlist("files") if x]
                 if not files:
                     return flask.flash("submit at least one file")
-                db.execute("INSERT OR REPLACE INTO Submissions VALUES (?, ?, ?, NULL)", (user.id, num, datetime.datetime.now(datetime.timezone.utc)))
+                db.execute("INSERT OR REPLACE INTO Submissions (author_id, round_num, submitted_at) VALUES (?, ?, ?)", (user.id, num, datetime.datetime.now(datetime.timezone.utc)))
                 db.execute("DELETE FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id))
                 for file in files:
                     try:
@@ -624,34 +613,32 @@ def take(num):
                         logging.info(f"{user.id} liked {id}")
             case ("comment", 2 | 3):
                 parent = int(form["parent"])
-                anon = form.get("anon") == "yes"
+                persona = int(form["persona"])
                 reply = int(form["reply"]) if "reply" in form else None
                 content = form["content"]
+                if persona != -1:
+                    content = requests.post(config.canon_url + f"/users/{user.id}/transform", json={"text": content, "persona": persona}).json()["text"]
                 time = datetime.datetime.now(datetime.timezone.utc)
                 if edit := form.get("edit"):
                     owner, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (edit,)).fetchone()
                     if user.id != owner:
                         flask.abort(403)
-                    db.execute("UPDATE Comments SET content = ?, edited_at = ?, reply = ?, anonymous = ? WHERE id = ?", (content, time, reply, anon, edit))
+                    db.execute("UPDATE Comments SET content = ?, edited_at = ?, reply = ?, persona = ?, og_persona = IIF(og_persona IS NULL, persona, og_persona) WHERE id = ?", (content, time, reply, persona, edit))
                     anchor = f"c{edit}"
-                    logging.info(f"{user.id} edited their comment {edit} (anon: {anon}, reply: {reply}): {content}")
+                    logging.info(f"{user.id} edited their comment {edit} (persona: {persona}, reply: {reply}): {content}")
                 else:
                     id, = db.execute(
-                        "INSERT INTO Comments (round_num, parent, author_id, content, posted_at, reply, anonymous) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
-                        (num, parent, user.id, content, time, reply, anon)
+                        "INSERT INTO Comments (round_num, parent, author_id, content, posted_at, reply, persona) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                        (num, parent, user.id, content, time, reply, persona)
                     ).fetchone()
                     anchor = f"c{id}"
-                    logging.info(f"{user.id} commented on {parent} (id: {id}, anon: {anon}, reply: {reply}): {content}")
-                    source = get_name(user.id) if not anon else "someone"
+                    logging.info(f"{user.id} commented on {parent} (id: {id}, persona: {persona}, reply: {reply}): {content}")
+                    source = persona_name(user.id, persona)
                     msg = f"at <https://cg.esolangs.gay/{num}#c{id}>:\n{content}"
                     reply_author = None
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
-                        if reply_author != user.id:
-                            pos, = db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, parent)).fetchone()
-                            dm(reply_author, f"{source} replied to your comment on entry #{pos} {msg}")
-                    if parent not in (reply_author, user.id):
-                        dm(parent, f"{source} commented on your submission {msg}")
+                    requests.post(config.canon_url + "/notify", {"reply": reply_author, "parent": parent, "name": persona_name(persona), "url": f"https://cg.esolangs.gay/{num}#c{id}"})
             case ("delete-comment", 2 | 3):
                 id = form["id"]
                 owner, pos = db.execute(
@@ -660,8 +647,6 @@ def take(num):
                 ).fetchone()
                 if user.id not in (owner, 319753218592866315):
                     flask.abort(403)
-                # prevent dangling replies
-                db.execute("UPDATE Comments SET reply = NULL WHERE reply = ?", (id,))
                 db.execute("DELETE FROM Comments WHERE id = ?", (id,))
                 anchor = str(pos)
                 logging.info(f"{user.id} deleted their comment {id}")
@@ -810,6 +795,56 @@ def user_stats(player):
   </body>
 </html>
 """
+
+@app.route("/anon")
+def canon_settings():
+    if not discord.authorized:
+        panel = LOGIN_BUTTON
+    else:
+        user = discord.fetch_user().id
+        settings = requests.get(config.canon_url + f"/users/{user}/settings").json()
+        personas = requests.get(config.canon_url + f"/users/{user}/personas").json()
+        panel = '<form method="POST"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p>'
+        panel += f'<ul><li><strong>{get_name(user)}</strong></li>'
+        for persona in personas:
+            end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
+            panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
+        panel += f'<li><input name="name" type="text" size="16"> <input type="submit" name="add" value="add"> {m[0] if (m := flask.get_flashed_messages()) else ""}</li></ul>'
+        for setting in settings:
+            panel += f'<h3>{setting["display"].lower()} <input type="checkbox" name="{setting["name"]}"{" checked"*setting["value"]}></h3><p>{setting["blurb"].lower()}</p>'
+        panel += '<input type="submit" value="save"></form>'
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    {META}
+    <meta content="anon settings" property="og:title">
+    <meta content="configure the behaviour of cg and esobot in regards to anonymous posts" property="og:description">
+    <meta content="https://cg.esolangs.gay/anon" property="og:url">
+    <title>anon settings</title>
+  </head>
+  <body>
+    <a href="/index">index</a>
+    <h1>anon settings</h2>
+    <p>here you can configure the system behind posting anonymously on cg and Esolangs.</p>
+    {panel}
+  </body>
+</html>
+"""
+
+@app.route("/anon", methods=["POST"])
+def change_settings():
+    if not discord.authorized:
+        flask.abort(403)
+    user = discord.fetch_user().id
+    requests.post(config.canon_url + f"/users/{user}/settings", json=flask.request.form.to_dict())
+    if "add" in flask.request.form:
+        r = requests.post(config.canon_url + f"/users/{user}/personas", json={"name": flask.request.form["name"]}).json()
+        if r["result"] == "taken":
+            flask.flash("that name is taken or reserved")
+    elif (d := next(iter(flask.request.form.keys()))).isdigit() and flask.request.form[d] == "delete":
+        requests.delete(config.canon_url + f"/personas/{d}")
+    return flask.redirect(flask.url_for("canon_settings"))
 
 @app.route("/callback")
 def callback():

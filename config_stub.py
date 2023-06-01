@@ -4,3 +4,4 @@ client_secret = ""
 bot_token = ""
 cb_url = ""
 log_file = None  # or a filename
+canon_url = ""

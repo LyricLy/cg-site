@@ -134,7 +134,9 @@ function shuffleGuesses() {
 
 function resize(element) {
     element.style.height = "1px";
-    element.style.height = element.scrollHeight+"px";
+    element.style.padding = "0px";
+    element.style.height = element.scrollHeight + "px";
+    element.style.padding = null;
 }
 
 function considerSubmit(event) {
@@ -150,9 +152,9 @@ function un(element) {
 
 const unner = '<button type="button" onclick="un(this)">[x]</button>'
 
-function edit(id, parent, content, anonymous, replyId) {
+function edit(id, parent, content, persona, replyId) {
     const panel = document.getElementById("post-" + parent);
-    if (panel.anon) panel.anon.value = anonymous ? "yes" : "no";
+    panel.persona.value = persona;
     panel.content.value = content;
     const extra = panel.querySelector(".extra");
     extra.innerHTML = ` <span class="edit">editing <a href="#c${id}">#${id}</a> ${unner}<input type="hidden" name="edit" value="${id}"></span>`

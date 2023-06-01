@@ -151,3 +151,30 @@ input[type="number"] {
 .delete-button {
     display: inline;
 }
+
+.tooltip {
+    color: #a83513;
+    cursor: default;
+}
+
+.tooltip-inner {
+    visibility: hidden;
+    background-color: #fbfaf9;
+    color: #333;
+    border: 1px solid #000;
+    text-align: center;
+    cursor: auto;
+    padding: 5px;
+    border-radius: 4px;
+    position: absolute;
+    z-index: 1;
+}
+
+:is(.tooltip:hover, .tooltip:active) .tooltip-inner {
+    visibility: visible;
+}
+
+.hidden-submit {
+    position: absolute;
+    left: -9999px;
+}

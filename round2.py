@@ -1,6 +1,8 @@
 import sqlite3
 import random
 import datetime
+import config
+import requests
 
 
 db = sqlite3.connect("the.db")
@@ -10,5 +12,7 @@ db.execute("UPDATE Rounds SET stage = 2, stage2_at = ? WHERE num = ?", (datetime
 subs = db.execute("SELECT * FROM Submissions WHERE round_num = ?", num).fetchall()
 random.shuffle(subs)
 for idx, sub in enumerate(subs, start=1):
-    db.execute("UPDATE Submissions SET position = ? WHERE round_num = ? AND author_id = ?", (idx, sub["round_num"], sub["author_id"]))
+    author = sub["author_id"]
+    persona = requests.post(config.canon_url + f"/users/{author}/personas", json={"name": f"[author of #{idx}]", "sudo": True, "temp": True}).json()["id"]
+    db.execute("UPDATE Submissions SET position = ?, persona = ? WHERE round_num = ? AND author_id = ?", (idx, persona, sub["round_num"], author))
 db.commit()

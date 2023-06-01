@@ -17,7 +17,8 @@ CREATE TABLE Submissions (
     round_num INTEGER NOT NULL,
     submitted_at TIMESTAMP,
     position INTEGER,
-    FOREIGN KEY (author_id) REFERENCES People(id),
+    persona INTEGER NOT NULL,
+    FOREIGN KEY (author_id) REFERENCES People(id) ON UPDATE CASCADE,
     FOREIGN KEY (round_num) REFERENCES Rounds(num),
     PRIMARY KEY (author_id, round_num),
     UNIQUE (position, round_num)
@@ -30,7 +31,7 @@ CREATE TABLE Files (
     content BLOB NOT NULL,
     lang TEXT,
     PRIMARY KEY (name, round_num),
-    FOREIGN KEY (author_id, round_num) REFERENCES Submissions(author_id, round_num)
+    FOREIGN KEY (author_id, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Guesses (
@@ -42,9 +43,9 @@ CREATE TABLE Guesses (
     UNIQUE (round_num, player_id, guess),
     UNIQUE (round_num, player_id, actual),
     CHECK (player_id <> guess AND player_id <> actual),
-    FOREIGN KEY (player_id, round_num) REFERENCES Submissions(author_id, round_num),
-    FOREIGN KEY (guess, round_num) REFERENCES Submissions(author_id, round_num),
-    FOREIGN KEY (actual, round_num) REFERENCES Submissions(author_id, round_num)
+    FOREIGN KEY (player_id, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (guess, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (actual, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Likes (
@@ -52,8 +53,8 @@ CREATE TABLE Likes (
     player_id INTEGER NOT NULL,
     liked INTEGER NOT NULL,
     UNIQUE (round_num, player_id, liked),
-    FOREIGN KEY (player_id, round_num) REFERENCES Submissions(author_id, round_num),
-    FOREIGN KEY (liked, round_num) REFERENCES Submissions(author_id, round_num)
+    FOREIGN KEY (player_id, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (liked, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE Targets (
@@ -74,7 +75,8 @@ CREATE TABLE Comments (
     posted_at TIMESTAMP NOT NULL,
     edited_at TIMESTAMP,
     reply INTEGER,
-    anonymous INTEGER NOT NULL,
-    FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num),
-    FOREIGN KEY (reply) REFERENCES Comments(id)
+    persona INTEGER NOT NULL,
+    og_persona INTEGER,
+    FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (reply) REFERENCES Comments(id) ON DELETE SET NULL
 );
