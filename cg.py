@@ -203,14 +203,20 @@ def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
 def persona_name(author, persona, d={}):
-    return d.get(persona) or d.setdefault(persona, get_name(author) if persona == -1 else bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
+    return d.get(persona) or d.setdefault(persona,
+        get_name(author) if persona == -1
+        else "[unknown]" if not config.canon_url
+        else bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
 
 def fetch_personas():
+    user = discord.fetch_user().id
+    base_persona = {"id": -1, "name": get_name(user)}
+    if not config.canon_url:
+        return [base_persona]
     if not hasattr(flask.g, "d"):
         flask.g.d = {}
     d = flask.g.d
-    user = discord.fetch_user().id
-    return d.get(user) or d.setdefault(user, [{"id": -1, "name": get_name(user)}, *requests.get(config.canon_url + f"/users/{user}/personas").json()])
+    return d.get(user) or d.setdefault(user, [base_persona, *requests.get(config.canon_url + f"/users/{user}/personas").json()])
 
 def pass_to_js(*args):
     s = ""
@@ -560,7 +566,7 @@ def take(num):
         flask.abort(404)
     user = discord.fetch_user()
     form = flask.request.form
-    if not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
+    if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
     anchor = None
@@ -638,7 +644,8 @@ def take(num):
                     reply_author = None
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
-                    requests.post(config.canon_url + "/notify", {"reply": reply_author, "parent": parent, "name": persona_name(persona), "url": f"https://cg.esolangs.gay/{num}#c{id}"})
+                    if config.canon_url:
+                        requests.post(config.canon_url + "/notify", {"reply": reply_author, "parent": parent, "name": persona_name(persona), "url": f"https://cg.esolangs.gay/{num}#c{id}"})
             case ("delete-comment", 2 | 3):
                 id = form["id"]
                 owner, pos = db.execute(
@@ -798,7 +805,9 @@ def user_stats(player):
 
 @app.route("/anon")
 def canon_settings():
-    if not discord.authorized:
+    if not config.canon_url:
+        panel = "this page is not available"
+    elif not discord.authorized:
         panel = LOGIN_BUTTON
     else:
         user = discord.fetch_user().id
