@@ -568,7 +568,7 @@ def take(num):
     form = flask.request.form
     if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
         flask.abort(403)
-    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.username))
+    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.to_json()["global_name"]))
     anchor = None
     try:
         match (form["type"], rnd["stage"]):
