@@ -203,10 +203,11 @@ def format_time(dt):
     return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
 
 def persona_name(author, persona, d={}):
-    return d.get(persona) or d.setdefault(persona,
-        get_name(author) if persona == -1
-        else "[unknown]" if not config.canon_url
-        else bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
+    if persona == -1:
+        return get_name(author)
+    if not config.canon_url:
+        return "[unknown]"
+    return d.get(persona) or d.setdefault(persona, bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
 
 def fetch_personas():
     user = discord.fetch_user().id
