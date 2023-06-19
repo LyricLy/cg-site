@@ -217,7 +217,7 @@ def fetch_personas():
     if not hasattr(flask.g, "d"):
         flask.g.d = {}
     d = flask.g.d
-    return d.get(user) or d.setdefault(user, [base_persona, *requests.get(config.canon_url + f"/users/{user}/personas").json()])
+    return d.get(user.id) or d.setdefault(user.id, [base_persona, *requests.get(config.canon_url + f"/users/{user.id}/personas").json()])
 
 def pass_to_js(*args):
     s = ""
