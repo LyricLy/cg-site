@@ -646,7 +646,7 @@ def take(num):
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
                     if config.canon_url:
-                        requests.post(config.canon_url + "/notify", {"reply": reply_author, "parent": parent, "name": persona_name(persona), "url": f"https://cg.esolangs.gay/{num}#c{id}"})
+                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "url": f"https://cg.esolangs.gay/{num}#c{id}"})
             case ("delete-comment", 2 | 3):
                 id = form["id"]
                 owner, pos = db.execute(
