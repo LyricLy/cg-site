@@ -210,8 +210,8 @@ def persona_name(author, persona, d={}):
     return d.get(persona) or d.setdefault(persona, bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
 
 def fetch_personas():
-    user = discord.fetch_user().id
-    base_persona = {"id": -1, "name": get_name(user)}
+    user = discord.fetch_user()
+    base_persona = {"id": -1, "name": user.to_json()["global_name"]}
     if not config.canon_url:
         return [base_persona]
     if not hasattr(flask.g, "d"):
