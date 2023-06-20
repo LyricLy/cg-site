@@ -192,7 +192,7 @@ def format_time(dt):
 
 def persona_name(author, persona, d={}):
     if persona == -1:
-        return get_name(author) + '<span class="verified"></span>'
+        return get_name(author) + ' <span class="verified"></span>'
     if not config.canon_url:
         return "[unknown]"
     return d.get(persona) or d.setdefault(persona, bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
