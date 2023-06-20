@@ -579,7 +579,7 @@ def take(num):
                         guess = None
                     elif guess not in LANGUAGES:
                         guess = "text"
-                    db.execute("INSERT INTO Files VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
+                    db.execute("INSERT INTO Files (name, author_id, round_num, content, lang) VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
                 logging.info(f"accepted files {', '.join(str(x.filename) for x in files)} from {user.id}")
             case ("langs", 1):
                 for key, value in form.items():
