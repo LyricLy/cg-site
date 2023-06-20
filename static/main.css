@@ -186,5 +186,6 @@ input[type="number"] {
     width: 1rem;
     display: inline-block;
     background-repeat: no-repeat;
-    vertical-align: middle;
+    position: relative;
+    bottom: -2px;
 }
