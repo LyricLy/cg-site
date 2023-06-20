@@ -18,7 +18,6 @@ import magic
 import mistune
 import requests
 import flask
-import flask_minify
 import flask_discord
 import yarl
 from flask_discord import requires_authorization as auth
@@ -33,7 +32,6 @@ import config
 
 logging.basicConfig(filename=config.log_file, encoding="utf-8", format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", level=logging.INFO)
 app = flask.Flask(__name__, static_url_path="")
-flask_minify.Minify(app=app)
 app.secret_key = config.secret_key
 app.config |= {
     "SESSION_COOKIE_HTTPONLY": False,
@@ -291,6 +289,7 @@ def render_files(db, num, author, lang_dropdowns=False):
                         text = str(best) if best else "cg: couldn't decode file contents"
                     hl_content = highlight(text, get_lexer_by_name(lang), formatter)
                     db.execute("UPDATE Files SET hl_content = ? WHERE round_num = ? AND name = ?", (hl_content, num, name))
+                    db.commit()
                 files += hl_content
             files += "</details>"
     return files
