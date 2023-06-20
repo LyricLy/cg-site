@@ -32,7 +32,7 @@ import config
 
 
 logging.basicConfig(filename=config.log_file, encoding="utf-8", format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", level=logging.INFO)
-app = flask.Flask(__name__)
+app = flask.Flask(__name__, static_url_path="")
 flask_minify.Minify(app=app)
 app.secret_key = config.secret_key
 app.config |= {
@@ -108,18 +108,6 @@ def download_file(num, name):
 @app.route("/files/<name>")
 def download_file_available_for_public_access(name):
     return flask.send_from_directory("./files/", name)
-
-@app.route("/main.js")
-def js():
-    return flask.send_file("./main.js")
-
-@app.route("/main.css")
-def css():
-    return flask.send_file("./main.css")
-
-@app.route("/favicon.png")
-def favicon():
-    return flask.send_file("./favicon.png")
 
 @app.route("/credits")
 def credits():
@@ -204,7 +192,7 @@ def format_time(dt):
 
 def persona_name(author, persona, d={}):
     if persona == -1:
-        return get_name(author)
+        return get_name(author) + '<span class="verified"></span>'
     if not config.canon_url:
         return "[unknown]"
     return d.get(persona) or d.setdefault(persona, bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
@@ -640,7 +628,6 @@ def take(num):
                     ).fetchone()
                     anchor = f"c{id}"
                     logging.info(f"{user.id} commented on {parent} (id: {id}, persona: {persona}, reply: {reply}): {content}")
-                    source = persona_name(user.id, persona)
                     msg = f"at <https://cg.esolangs.gay/{num}#c{id}>:\n{content}"
                     reply_author = None
                     if reply:
@@ -776,7 +763,7 @@ def user_stats(player):
     s = ""
     sc = 0
     formatter = HtmlFormatter(style="monokai", linenos=True)
-    for r in db.execute("SELECT Submissions.* FROM Submissions INNER JOIN Rounds ON num = round_num INNER JOIN People ON name = ? WHERE stage = 3 AND author_id = id ORDER BY round_num", (player,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions INNER JOIN Rounds ON num = round_num INNER JOIN People ON name = ? WHERE stage = 3 AND author_id = id ORDER BY round_num", (player,)):
         position = r["position"]
         num = r["round_num"]
         s += f'<h2 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h2>'

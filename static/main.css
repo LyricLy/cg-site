@@ -178,3 +178,11 @@ input[type="number"] {
     position: absolute;
     left: -9999px;
 }
+
+.verified {
+    background: url("/verified.png");
+    background-size: 1em;
+    height: 1em;
+    width: 1em;
+    display: inline-block;
+}
