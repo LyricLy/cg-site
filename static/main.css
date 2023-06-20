@@ -187,5 +187,5 @@ input[type="number"] {
     display: inline-block;
     background-repeat: no-repeat;
     position: relative;
-    bottom: -2px;
+    bottom: -1px;
 }
