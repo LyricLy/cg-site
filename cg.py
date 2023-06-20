@@ -42,6 +42,7 @@ app.config |= {
 }
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url)
 markdown = mistune.create_markdown(plugins=["strikethrough", "table", "footnotes"])
+formatter = HtmlFormatter(style="monokai", linenos=True)
 
 
 def datetime_converter(value):
@@ -250,9 +251,9 @@ def render_comments(db, num, parent, show_info):
     return comments
 
 
-def render_files(db, formatter, num, author, lang_dropdowns=False):
+def render_files(db, num, author, lang_dropdowns=False):
     files = ""
-    for name, content, lang in db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
+    for name, content, hl_content, lang in db.execute("SELECT name, content, hl_content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
         name = bleach.clean(name)
         if str(lang).startswith("external"):
             url = lang.removeprefix("external ")
@@ -282,17 +283,20 @@ def render_files(db, formatter, num, author, lang_dropdowns=False):
             elif lang == "pdf":
                 files += f'<object type="application/pdf" data="/{num}/{name}" width="1280" height="720"></object>'
             else:
-                try:
-                    text = content.decode()
-                except UnicodeDecodeError:
-                    best = charset_normalizer.from_bytes(content).best()
-                    text = str(best) if best else "cg: couldn't decode file contents"
-                files += highlight(text, get_lexer_by_name(lang), formatter)
+                if not hl_content:
+                    try:
+                        text = content.decode()
+                    except UnicodeDecodeError:
+                        best = charset_normalizer.from_bytes(content).best()
+                        text = str(best) if best else "cg: couldn't decode file contents"
+                    hl_content = highlight(text, get_lexer_by_name(lang), formatter)
+                    db.execute("UPDATE Files SET hl_content = ? WHERE round_num = ? AND name = ?", (hl_content, num, name))
+                files += hl_content
             files += "</details>"
     return files
 
 
-def render_submission(db, formatter, row, show_info, written_by=True):
+def render_submission(db, row, show_info, written_by=True):
     author, num, submitted_at, position = row
     entries = ""
     if show_info:
@@ -323,16 +327,15 @@ def render_submission(db, formatter, row, show_info, written_by=True):
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
-    entries += render_files(db, formatter, num, author)
+    entries += render_files(db, num, author)
     return entries
 
 def render_submissions(db, num, show_info):
-    formatter = HtmlFormatter(style="monokai", linenos=True)
     entries = f'<h1>entries</h1><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<h2 id="{position}">entry #{position}</h2>'
-        entries += render_submission(db, formatter, r, show_info)
+        entries += render_submission(db, r, show_info)
     return entries, formatter.get_style_defs(".code") + ".code { tab-size: 4; }"
 
 def rank_enumerate(xs, *, key):
@@ -413,7 +416,7 @@ def show_round(num):
 </form>
 """
                 user = discord.fetch_user()
-                files = render_files(db, formatter, num, user.id, lang_dropdowns=True)
+                files = render_files(db, num, user.id, lang_dropdowns=True)
                 if files:
                     panel += f"""
 <h2>review</h2>
@@ -762,12 +765,11 @@ def user_stats(player):
     db = get_db()
     s = ""
     sc = 0
-    formatter = HtmlFormatter(style="monokai", linenos=True)
     for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions INNER JOIN Rounds ON num = round_num INNER JOIN People ON name = ? WHERE stage = 3 AND author_id = id ORDER BY round_num", (player,)):
         position = r["position"]
         num = r["round_num"]
         s += f'<h2 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h2>'
-        s += render_submission(db, formatter, r, True, written_by=False)
+        s += render_submission(db, r, True, written_by=False)
         sc += 1
     if not sc:
         flask.abort(404)
