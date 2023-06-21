@@ -579,7 +579,7 @@ def take(num):
                     except ClassNotFound:
                         guess = "image" if file.filename.lower().endswith((".png", ".jpg", ".jpeg")) else "text"
                     b = file.read()
-                    if len(b) > 64*1024:
+                    if not b or len(b) > 64*1024:
                         guess = None
                     elif guess not in LANGUAGES:
                         guess = "text"
