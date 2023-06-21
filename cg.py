@@ -330,10 +330,10 @@ def render_submission(db, row, show_info, written_by=True):
     return entries
 
 def render_submissions(db, num, show_info):
-    entries = f'<h1>entries</h1><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
+    entries = f'<h2>entries</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
-        entries += f'<h2 id="{position}">entry #{position}</h2>'
+        entries += f'<h3 id="{position}">entry #{position}</h3>'
         entries += render_submission(db, r, show_info)
     return entries, formatter.get_style_defs(".code") + ".code { tab-size: 4; }"
 
@@ -428,6 +428,8 @@ def show_round(num):
 """
             else:
                 panel = LOGIN_BUTTON
+            entry_count, = db.execute("SELECT COUNT(*) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
+            entries = f"<strong>{entry_count}</strong> entries have been received so far." if entry_count != 1 else "<strong>1</strong> entry has been received so far."
             submit_by = rnd['stage2_at'] or rnd['started_at']+datetime.timedelta(days=7)
             return f"""
 <!DOCTYPE html>
@@ -446,6 +448,8 @@ def show_round(num):
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
     <h2>specification</h2>
     {markdown(rnd['spec'])}
+    <h2>entries</h2>
+    <p>{entries}</p>
     <h2>submit</h2>
     <p>{m[0] if (m := flask.get_flashed_messages()) else ""}</p>
     {panel}
@@ -767,7 +771,7 @@ def user_stats(player):
     for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions INNER JOIN Rounds ON num = round_num INNER JOIN People ON name = ? WHERE stage = 3 AND author_id = id ORDER BY round_num", (player,)):
         position = r["position"]
         num = r["round_num"]
-        s += f'<h2 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h2>'
+        s += f'<h3 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h3>'
         s += render_submission(db, r, True, written_by=False)
         sc += 1
     if not sc:
