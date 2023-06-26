@@ -592,7 +592,7 @@ def take(num):
                     if value not in LANGUAGES:
                         flask.abort(400)
                     value = LANGMAP.get(value, value)
-                    db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
+                    db.execute("UPDATE Files SET hl_content = NULL, lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
                 guesses = form.getlist("guess")
