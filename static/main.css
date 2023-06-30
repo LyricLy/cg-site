@@ -28,8 +28,7 @@ p + ul {
 
 pre {
     font-size: 12px;
-    margin: 8px auto;
-    margin-left: 2px;
+    margin: 8px 2px;
 }
 
 code {
