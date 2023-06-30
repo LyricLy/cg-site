@@ -28,6 +28,8 @@ p + ul {
 
 pre {
     font-size: 12px;
+    margin: 8px auto;
+    margin-left: 2px;
 }
 
 code {
@@ -54,13 +56,24 @@ th {
     top: 0;
 }
 
+table {
+    border-collapse: collapse;
+}
+
 table.sortable :is(th, td) {
     border: 1px solid;
     padding: 4px;
 }
 
-table.sortable {
-    border-collapse: collapse;
+.linenos {
+    background-color: #272822;
+    border-right: 1px solid #515151;
+    color: #6e6e6e;
+}
+
+.linenos .normal {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
 }
 
 input[type="number"] {
