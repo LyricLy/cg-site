@@ -727,7 +727,7 @@ def stats():
             f"{plus/played:.3f}",
             f"{minus/played:.3f}",
             *[likes,
-            f"{likes/likers_seen:.3f}" if likers_seen else -1]*(before_round >= 13),
+            f"{likes/likers_seen:.3f}" if likers_seen and played >= 3 else -1]*(before_round >= 13),
         ]
         table += "<tr>"
         for value in values:
