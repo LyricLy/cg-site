@@ -10,6 +10,7 @@ body {
     max-width: 1200px;
     margin: 30px auto;
     color: #333;
+    tab-size: 4;
 }
 
 small {
@@ -51,6 +52,15 @@ th {
     background-color: white;
     position: sticky;
     top: 0;
+}
+
+table.sortable :is(th, td) {
+    border: 1px solid;
+    padding: 4px;
+}
+
+table.sortable {
+    border-collapse: collapse;
 }
 
 input[type="number"] {

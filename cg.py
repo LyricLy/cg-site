@@ -41,6 +41,7 @@ app.config |= {
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url)
 markdown = mistune.create_markdown(plugins=["strikethrough", "table", "footnotes"])
 formatter = HtmlFormatter(style="monokai", linenos=True)
+style = formatter.get_style_defs(".code")
 
 
 def datetime_converter(value):
@@ -335,7 +336,7 @@ def render_submissions(db, num, show_info):
         position = r["position"]
         entries += f'<h3 id="{position}">entry #{position}</h3>'
         entries += render_submission(db, r, show_info)
-    return entries, formatter.get_style_defs(".code") + ".code { tab-size: 4; }"
+    return entries
 
 def rank_enumerate(xs, *, key):
     cur_idx = None
@@ -404,7 +405,6 @@ def show_round(num):
 
     match rnd["stage"]:
         case 1:
-            formatter = HtmlFormatter(style="monokai", linenos=True)
             if discord.authorized:
                 panel = """
 <form method="post" enctype="multipart/form-data">
@@ -440,7 +440,7 @@ def show_round(num):
     <meta content="code guessing #{num}/1" property="og:title">
     <meta content="{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
-    <style>{formatter.get_style_defs(".code")}</style>
+    <style>{style}</style>
   </head>
   <body>
     {top}
@@ -457,7 +457,7 @@ def show_round(num):
 </html>
 """
         case 2:
-            entries, style = render_submissions(db, num, False)
+            entries = render_submissions(db, num, False)
             your_id = discord.fetch_user().id if discord.authorized else None
             query = db.execute("SELECT People.id, People.name, Submissions.position, locked FROM Submissions "
                                "INNER JOIN People ON People.id = Submissions.author_id "
@@ -512,7 +512,7 @@ def show_round(num):
 </html>
 """
         case 3:
-            entries, style = render_submissions(db, num, True)
+            entries = render_submissions(db, num, True)
             results = "<ol>"
             for idx, (author, total, plus, bonus, minus) in score_round(num):
                 bonus_s = f" ~{bonus}"*(num in (12, 13))
@@ -686,6 +686,19 @@ TIEBREAKS = {
     },
 }
 
+def build_table(cols, rows):
+    table = '<table class="sortable"><thead></tr>'
+    for col in cols:
+        table += f'<th scope="col">{col}</th>'
+    table += "</tr></thead>"
+    for row in rows:
+        table += "<tr>"
+        for value in row:
+            table += f"<td>{value:.3f}</td>" if isinstance(value, float) else f"<td>{value}</td>"
+        table += "</tr>"
+    table += "</table>"
+    return table
+
 @app.route("/stats/")
 def stats():
     db = get_db()
@@ -704,17 +717,14 @@ def stats():
         lb[player][-2] += count
 
     cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "in", "won", "tot/r", "+/r", "-/r", *["likes", "pop"]*(before_round >= 13)]
-    table = "<thead><tr>"
-    for col in cols:
-        table += f'<th scope="col">{col}</th>'
-    table += "</tr></thead>"
+    rows = []
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
     for rank, (player, (total, plus, bonus, minus, played, won, likes, likers_seen)) in e:
         if not played:
             continue
         name = get_name(player)
-        values = [
+        rows.append([
             rank,
             f'<a href="/stats/{name}">{name}</a>',
             total,
@@ -723,16 +733,14 @@ def stats():
             *[bonus]*(before_round >= 12),
             played,
             won,
-            f"{total/played:.3f}",
-            f"{plus/played:.3f}",
-            f"{minus/played:.3f}",
+            total / played,
+            plus / played,
+            minus / played,
             *[likes,
-            f"{likes/likers_seen:.3f}" if likers_seen and played >= 3 else -1]*(before_round >= 13),
-        ]
-        table += "<tr>"
-        for value in values:
-            table += f"<td>{value}</td>"
-        table += "</tr>"
+            likes / likers_seen if likers_seen and played >= 4 else -1]*(before_round >= 13),
+        ])
+
+    table = build_table(cols, rows)
     match [tuple(x[1]) for x in e if x[0] == 1]:
         case [(name, (total, *_))]:
             desc = f"{get_name(name)} leads with {total} points."
@@ -748,7 +756,6 @@ def stats():
     <meta content="https://cg.esolangs.gay/stats/" property="og:url">
     <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
     <title>cg stats</title>
-    <style>th, td {{ border: 1px solid; padding: 4px; }} table {{ border-collapse: collapse; }}</style>
   </head>
   <body>
     <a href="/index">index</a>
@@ -758,24 +765,33 @@ def stats():
     <form>
       as of round <input name="round" type="number" value="{len(rounds)}" min="1"> <button type="submit">go</button>
     </form>
-    <table class="sortable">{table}</table>
+    {table}
   </body>
 </html>
 """
 
+CHUMPS = "player_id = ? AND guess = id"
+SCOURGES = "player_id = id AND guess = ?"
+FIND = "SELECT name, SUM(guess = actual), COUNT(*) AS count, SUM(guess = actual) * 1.0 / COUNT(*) AS ratio FROM People INNER JOIN Guesses ON {} GROUP BY id HAVING count >= 4 ORDER BY ratio DESC"
+
 @app.route("/stats/<player>")
 def user_stats(player):
     db = get_db()
+    r = db.execute("SELECT id FROM People WHERE name = ? AND EXISTS(SELECT 1 FROM Submissions WHERE author_id = id)", (player,)).fetchone()
+    if not r:
+        flask.abort(404)
+    player_id ,= r
+    cols = ["name", "correct guesses", "games together", "ratio"]
+    chumps = build_table(cols, db.execute(FIND.format(CHUMPS), (player_id,)).fetchall())
+    scourges = build_table(cols, db.execute(FIND.format(SCOURGES), (player_id,)).fetchall())
     s = ""
     sc = 0
-    for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions INNER JOIN Rounds ON num = round_num INNER JOIN People ON name = ? WHERE stage = 3 AND author_id = id ORDER BY round_num", (player,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num", (player_id,)):
         position = r["position"]
         num = r["round_num"]
         s += f'<h3 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h3>'
         s += render_submission(db, r, True, written_by=False)
         sc += 1
-    if not sc:
-        flask.abort(404)
     return f"""
 <!DOCTYPE html>
 <html>
@@ -785,11 +801,15 @@ def user_stats(player):
     <meta content="see their {sc} awesome entries" property="og:description">
     <meta content="https://cg.esolangs.gay/stats/{player}" property="og:url">
     <title>cg - {player}</title>
-    <style>{formatter.get_style_defs(".code")}</style>
+    <style>{style}</style>
   </head>
   <body>
     <a href="/stats">all stats</a>
     <h1>{player}'s stats</h1>
+    <h2>guessed the most</h2>
+    {chumps}
+    <h2>were guessed the most by</h2>
+    {scourges}
     <h2>entries</h2>
     {s}
   </body>
