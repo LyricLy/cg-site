@@ -12,8 +12,9 @@ for persona in db.execute("SELECT persona FROM Submissions WHERE round_num = ?",
 db.commit()
 shutil.copy("the.db", "once.db")
 shutil.copy("the.db", "static/the.db")
+with open("modify_for_public_viewing.sql") as f:
+    script = f.read()
 public_db = sqlite3.connect("static/the.db")
-public_db.execute("DROP TABLE Likes")
-public_db.execute("DROP TABLE Comments")
+public_db.executescript(script)
 if config.canon_url:
     requests.post(config.canon_url + "/personas/purge")
