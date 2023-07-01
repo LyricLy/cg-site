@@ -75,10 +75,11 @@ function swapAlt(elem) {
 }
 
 for (const button of document.getElementsByClassName("toggle")) {
-    if (button.hasAttribute("toggleValue")) swapAlt(button);
+    if (button.hasAttribute("togglevalue")) swapAlt(button);
     button.addEventListener("click", () => {
         swapAlt(button);
-        button.toggleValue = !button.toggleValue;
+        if (button.hasAttribute("togglevalue")) button.removeAttribute("togglevalue");
+        else button.setAttribute("togglevalue", "");
         button.dispatchEvent(new Event("toggle"));
     })
 }
@@ -108,14 +109,27 @@ function onLike(pos) {
     sender();
 }
 
+const download = document.getElementById("download");
+const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
+egg.pattern = "788965";
+
+let toggleFinish = false;
+const sendFinish = debounced(() => {
+    if (!toggleFinish) return;
+    toggleFinish = false;
+    const form = new FormData();
+    form.append("type", "finish");
+    send(form);
+})
+function finish() {
+    toggleFinish = !toggleFinish;
+    sendFinish();
+}
+
 function lock(elem) {
     elem.parentElement.classList.toggle("locked");
     sortable.option("onSort")();
 }
-
-const download = document.getElementById("download");
-const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
-egg.pattern = "788965";
 
 function shuffleGuesses() {
     const order = Array.from(players.children);

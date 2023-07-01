@@ -106,7 +106,7 @@ input[type="number"] {
     margin-left: 5px;
 }
 
-[alt="like"], [alt="🔒"] {
+[toggleValue=""] {
     border-radius: 10px;
     border-color: #ff5800;
     background-color: white;

@@ -323,7 +323,7 @@ def render_submission(db, row, show_info, written_by=True):
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details>"
     elif discord.authorized:
-        checked = " toggleValue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
+        checked = " togglevalue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
@@ -465,7 +465,16 @@ def show_round(num):
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _, _ in query):
-                panel = '<div id="guess-panel"><button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button><h2>guess <button onclick="shuffleGuesses()" title="shuffle guesses">🔀</button></h2><ol id="players">'
+                finished, = db.execute("SELECT finished_guessing FROM Submissions WHERE author_id = ?", (your_id,)).fetchone()
+                panel = f'''
+<div id="guess-panel">
+  <button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button>
+  <h2>
+    guess
+    <button onclick="shuffleGuesses()" title="shuffle guesses">🔀</button>
+    <button title="once all players have pressed this button, guessing can end early" class="toggle" ontoggle="finish(this)" alt="unfinish"{" togglevalue"*finished}>finish</button>
+  </h2>
+  <ol id="players">'''
                 for idx, (id, name, pos, locked) in enumerate(query):
                     if id == your_id:
                         query.pop(idx)
@@ -475,7 +484,7 @@ def show_round(num):
                     if id == your_id:
                         panel += f'<li data-id="me" class="player you locked">{name} (you!)</li>'
                     else:
-                        lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔓"{" toggleValue"*bool(locked)}>🔒</button>'
+                        lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*locked}>🔓</button>'
                         panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}">↕ {name} {lock_button}</li>'
                 panel += "</ol></div>"
             else:
@@ -602,6 +611,15 @@ def take(num):
                         locked = insert != guess
                         db.execute("INSERT INTO Guesses SELECT ?, ?, ?, author_id, ? FROM Submissions WHERE round_num = ? AND position = ?", (num, user.id, int(insert), locked, num, position))
                 logging.info(f"accepted guess {guesses} from {user.id}")
+            case ("finish", 2):
+                res, = db.execute("UPDATE Submissions SET finished_guessing = NOT finished_guessing WHERE round_num = ? AND author_id = ? RETURNING finished_guessing", (num, user.id)).fetchone()
+                if not res:
+                    logging.info(f"{user.id} unfinished guessing")
+                else:
+                    logging.info(f"{user.id} finished guessing")
+                    all_done, = db.execute("SELECT ALL(finished_guessing) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
+                    if config.canon_url and all_done:
+                        requests.post(config.canon_url + "/round-over")
             case ("like", 2):
                 for pos in form.getlist("position"):
                     id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(pos))).fetchone()
