@@ -103,7 +103,9 @@ def download_file(num, name):
                          "WHERE Files.round_num = ? AND Files.name = ? AND (Rounds.stage <> 1 OR Files.author_id = ?)", (num, name, user_id)).fetchone()
     if not f:
         flask.abort(404)
-    return flask.send_file(io.BytesIO(f[0]), mimetype="application/octet-stream")
+    resp = flask.send_file(io.BytesIO(f[0]), mimetype="application/octet-stream")
+    resp.headers["X-Robots-Tag"] = "noindex"
+    return resp
 
 @app.route("/files/<name>")
 def download_file_available_for_public_access(name):
