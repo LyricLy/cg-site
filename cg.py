@@ -85,9 +85,10 @@ def index():
   <head>
     {META}
     <meta content="code guessing" property="og:title">
+    <meta name="description" content="a game about writing code anonymously and guessing who wrote what.">
     <meta content="code and guess and such." property="og:description">
     <meta content="https://cg.esolangs.gay/index/" property="og:url">
-    <title>cg index</title>
+    <title>code guessing</title>
   </head>
   <body>
     <p><a href="/stats/">stats</a> &bull; <a href="/info">info</a> &bull; <a href="/credits">credits</a> &bull; <a href="/anon">anon settings</a></p>
