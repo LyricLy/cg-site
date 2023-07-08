@@ -255,6 +255,12 @@ def render_comments(db, num, parent, show_info):
     comments += "</div></details>"
     return comments
 
+def lang_display(lang):
+    if not lang:
+        return "No display"
+    if lang == "image":
+        return "Image"
+    return get_lexer_by_name(lang).name
 
 def render_files(db, num, author, lang_dropdowns=False):
     files = ""
@@ -269,13 +275,15 @@ def render_files(db, num, author, lang_dropdowns=False):
             filetype = magic.from_buffer(content)
             # remove appalling attempts at guessing language
             filetype = re.sub(r"^.+? (?:source|script|program), |(?<=text) executable", "", filetype)
-        header = f'<a href="{url}">{name}</a> <small><em>{filetype}</em></small>'
         if lang_dropdowns:
-            header += f' <select name="{name}" id="{name}">'
+            lang_section = f'<select name="{name}" id="{name}">'
             for language in LANGUAGES:
-                selected = " selected"*(LANGMAP.get(language, language) == lang)
-                header += f'<option value="{language}"{selected}>{language}</option>'
-            header += "</select><br>"
+                selected = " selected"*(language == lang)
+                lang_section += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
+            lang_section += "</select>"
+        else:
+            lang_section = f"{lang_display(lang)}"
+        header = f'<a href="{url}">{name}</a> <small><em>{lang_section}, {filetype}</em></small>'
         if lang is None:
             files += f'{header}<br>'
         else:
@@ -353,17 +361,7 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = ["py", "rs", "b", "hs", "c", "cpp", "go", "zig", "d", "raku", "pony", "js", "ts", "apl", "sml", "ml", "fs", "vim", "sh", "bf", "lua", "erl", "sed", "ada", "none", "img", "txt"]
-LANGMAP = {
-    "bf": "befunge",
-    "b": "bf",
-    "fs": "f#",
-    "erl": "erlang",
-    "ml": "ocaml",
-    "img": "image",
-    "txt": "text",
-    "none": None,
-}
+LANGUAGES = ["py", "c", "rs", "js", "ts", "bf", "hs", "lua", "zig", "cpp", "go", "d", "raku", "apl", "sml", "ocaml", "f#", "erlang", "pony", "ada", "vim", "sed", "sh", "befunge", "image", "text", None]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
@@ -606,7 +604,6 @@ def take(num):
                         continue
                     if value not in LANGUAGES:
                         flask.abort(400)
-                    value = LANGMAP.get(value, value)
                     db.execute("UPDATE Files SET hl_content = NULL, lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
