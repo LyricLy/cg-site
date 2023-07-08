@@ -191,7 +191,7 @@ def get_name(i):
     return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
 
 def format_time(dt):
-    return f'<strong><span class="datetime">{dt.isoformat()}</span></strong>'
+    return f'<time role="timer" datetime="{dt.isoformat()}">{dt.isoformat()}</time>'
 
 def persona_name(author, persona, d={}):
     if persona == -1:
