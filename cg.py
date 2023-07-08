@@ -200,9 +200,12 @@ def persona_name(author, persona, d={}):
         return "[unknown]"
     return d.get(persona) or d.setdefault(persona, bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
 
+def name_of_user(user):
+    return user.to_json()["global_name"] or user.name
+
 def fetch_personas():
     user = discord.fetch_user()
-    base_persona = {"id": -1, "name": user.to_json()["global_name"]}
+    base_persona = {"id": -1, "name": name_of_user(user)}
     if not config.canon_url:
         return [base_persona]
     if not hasattr(flask.g, "d"):
@@ -575,7 +578,7 @@ def take(num):
     form = flask.request.form
     if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
         flask.abort(403)
-    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, user.to_json()["global_name"]))
+    db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, name_of_user(user)))
     anchor = None
     try:
         match (form["type"], rnd["stage"]):
