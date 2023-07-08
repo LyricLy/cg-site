@@ -818,6 +818,7 @@ def user_stats(player):
 <html>
   <head>
     {META}
+    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
     <meta content="{player}'s code guessing stats" property="og:title">
     <meta content="see their {sc} awesome entries" property="og:description">
     <meta content="https://cg.esolangs.gay/stats/{player}" property="og:url">
