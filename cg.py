@@ -490,7 +490,7 @@ def show_round(num):
                     if id == your_id:
                         panel += f'<li data-id="me" class="player you locked">{name} (you!)</li>'
                     else:
-                        lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*locked}>🔓</button>'
+                        lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
                         panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}">↕ {name} {lock_button}</li>'
                 panel += "</ol></div>"
             else:
