@@ -622,7 +622,7 @@ def take(num):
                     logging.info(f"{user.id} unfinished guessing")
                 else:
                     logging.info(f"{user.id} finished guessing")
-                    all_done, = db.execute("SELECT MAX(finished_guessing) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
+                    all_done, = db.execute("SELECT MIN(finished_guessing) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
                     if config.canon_url and all_done:
                         requests.post(config.canon_url + "/round-over")
             case ("like", 2):
