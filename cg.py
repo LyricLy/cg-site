@@ -260,6 +260,10 @@ def lang_display(lang):
         return "No display"
     if lang == "image":
         return "Image"
+    if lang.startswith("iframe"):
+        return "Embedded page"
+    if lang.startswith("external"):
+        return "External link"
     return get_lexer_by_name(lang).name
 
 def render_files(db, num, author, lang_dropdowns=False):
@@ -268,7 +272,7 @@ def render_files(db, num, author, lang_dropdowns=False):
         name = bleach.clean(name)
         if str(lang).startswith("external"):
             url = lang.removeprefix("external ")
-            filetype = f"external link to {yarl.URL(url).host}"
+            filetype = f"to {yarl.URL(url).host}"
             lang = None
         else:
             url = f"/{num}/{name}"
