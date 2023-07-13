@@ -471,7 +471,7 @@ def show_round(num):
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
                                "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _, _ in query):
-                finished, = db.execute("SELECT finished_guessing FROM Submissions WHERE author_id = ?", (your_id,)).fetchone()
+                finished, = db.execute("SELECT finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()
                 panel = f'''
 <div id="guess-panel">
   <button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button>
