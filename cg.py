@@ -279,15 +279,13 @@ def render_files(db, num, author, lang_dropdowns=False):
             filetype = magic.from_buffer(content)
             # remove appalling attempts at guessing language
             filetype = re.sub(r"^.+? (?:source|script|program), |(?<=text) executable", "", filetype)
+        header = f'<a href="{url}">{name}</a> <small><em>{filetype}</em></small>'
         if lang_dropdowns:
-            lang_section = f'<select name="{name}" id="{name}">'
+            header += f' <select name="{name}" id="{name}">'
             for language in LANGUAGES:
                 selected = " selected"*(language == lang)
-                lang_section += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
-            lang_section += "</select>"
-        else:
-            lang_section = f"{lang_display(lang)}"
-        header = f'<a href="{url}">{name}</a> <small><em>{lang_section}, {filetype}</em></small>'
+                header += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
+            header += "</select>"
         if lang is None:
             files += f'{header}<br>'
         else:
