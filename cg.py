@@ -1,6 +1,6 @@
 import ctypes
 import functools
-import traceback
+import sys
 import sqlite3
 import datetime
 import io
@@ -604,6 +604,9 @@ def take(num):
                 for key, value in form.items():
                     if key == "type":
                         continue
+                    # the pain of being str()'d
+                    if value == "None":
+                        value = None 
                     if value not in LANGUAGES:
                         flask.abort(400)
                     db.execute("UPDATE Files SET hl_content = NULL, lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
@@ -676,13 +679,15 @@ def take(num):
                 logging.info(f"{user.id} deleted their comment {id}")
             case _:
                 flask.abort(400)
-    except Exception as e:
-        traceback.print_exception(e)
+    except:
+        raise
     else:
         flask.flash("submitted successfully")
         db.commit()
     finally:
         db.rollback()
+        if exc := sys.exception():
+            raise exc
         return flask.redirect(flask.url_for("show_round", num=num, _anchor=anchor))
 
 # TODO consider moving into DB
