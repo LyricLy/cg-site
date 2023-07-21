@@ -260,6 +260,8 @@ def lang_display(lang):
         return "No display"
     if lang == "image":
         return "Image"
+    if lang == "pdf":
+        return "PDF"
     if lang.startswith("iframe"):
         return "Embedded page"
     return get_lexer_by_name(lang).name
