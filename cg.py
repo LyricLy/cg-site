@@ -393,6 +393,24 @@ def score_round(num):
         return l
     return e
 
+HELL_QUERY = """
+WITH other_submissions AS (
+    SELECT author_id, position
+    FROM Submissions
+    WHERE Submissions.round_num = ?1 AND author_id != ?2
+), our_guesses AS (
+    SELECT actual, guess, locked FROM Guesses WHERE round_num = ?1 AND player_id = ?2
+), guesses_wo_holes AS (
+    SELECT COUNT(*) FILTER (WHERE guess IS NULL) OVER (ORDER BY position) as idx1, guess, COALESCE(locked, 0) as locked
+    FROM other_submissions LEFT JOIN our_guesses ON actual = author_id
+), hole_fills AS (
+    SELECT row_number() OVER (ORDER BY name COLLATE NOCASE) AS idx2, author_id
+    FROM other_submissions INNER JOIN People ON id = author_id
+    WHERE NOT EXISTS(SELECT 1 FROM our_guesses WHERE guess = author_id)
+)
+SELECT COALESCE(guess, author_id) as the_id, name, locked FROM guesses_wo_holes LEFT JOIN hole_fills ON idx1 = idx2 INNER JOIN People ON id = the_id
+"""
+
 @app.route("/<int:num>/")
 def show_round(num):
     db = get_db()
@@ -465,13 +483,8 @@ def show_round(num):
         case 2:
             entries = render_submissions(db, num, False)
             your_id = discord.fetch_user().id if discord.authorized else None
-            query = db.execute("SELECT People.id, People.name, Submissions.position, locked FROM Submissions "
-                               "INNER JOIN People ON People.id = Submissions.author_id "
-                               "LEFT JOIN (Guesses INNER JOIN Submissions as Submissions2 ON Submissions2.round_num = Guesses.round_num AND Guesses.actual = Submissions2.author_id) "
-                               "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
-                               "WHERE Submissions.round_num = ? ORDER BY Submissions2.position NULLS LAST, People.name COLLATE NOCASE", (your_id, num)).fetchall()
-            if discord.authorized and any(id == your_id for id, _, _, _ in query):
-                finished, = db.execute("SELECT finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()
+            if discord.authorized and (e := db.execute("SELECT position, finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()):
+                your_pos, finished = e
                 panel = f'''
 <div id="guess-panel">
   <button ontoggle="toggleSticky()" id="sticky-button" class="toggle" alt="show">hide</button>
@@ -481,12 +494,9 @@ def show_round(num):
     <button title="once all players have pressed this button, guessing can end early" class="toggle" ontoggle="finish(this)" alt="unfinish"{" togglevalue"*finished}>finish</button>
   </h2>
   <ol id="players">'''
-                for idx, (id, name, pos, locked) in enumerate(query):
-                    if id == your_id:
-                        query.pop(idx)
-                        query.insert(pos-1, (id, name, pos, locked))
-                        break
-                for id, name, _, locked in query:
+                query = db.execute(HELL_QUERY, (num, your_id)).fetchall()
+                query.insert(your_pos-1, (your_id, get_name(your_id), False))
+                for id, name, locked in query:
                     events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
                     if id == your_id:
                         panel += f'<li data-id="me" class="player you locked" {events}>{name} (you!)</li>'
@@ -496,7 +506,7 @@ def show_round(num):
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
-                for _, name, _, _ in query:
+                for name, in db.execute("SELECT name FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ?", (your_id,)):
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
                 if not discord.authorized:
