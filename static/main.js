@@ -68,6 +68,21 @@ if (players != null) {
     });
 }
 
+function isOnPlayerNumber(event) {
+    return event.x < event.target.getBoundingClientRect().left;
+}
+
+function setPlayerCursor(event) {
+    event.target.style.cursor = isOnPlayerNumber(event) ? "pointer" : "auto";
+}
+
+function clickPlayer(event) {
+    if (isOnPlayerNumber(event)) {
+        const index = Array.from(players.children).indexOf(event.target);
+        document.getElementsByClassName("entry-header").item(index).scrollIntoView();
+    }
+}
+
 function swapAlt(elem) {
     const alt = elem.getAttribute("alt");
     elem.setAttribute("alt", elem.innerHTML);

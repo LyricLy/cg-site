@@ -133,7 +133,7 @@ def credits():
       <li>HelloBoi, deadbraincoral - helping host round 4</li>
       <li>sonata «pathétique» - helping host the first 5 rounds</li>
       <li>LyricLy - rule amendments, bot development, site development, and hosting round 6 and onwards</li>
-      <li>RocketRace, olus2000, Palaiologos - ideas and advice</li>
+      <li>RocketRace, olus2000, Palaiologos, razetime - ideas and advice</li>
       <li>IFcoltransG - writing the info page</li>
       <li>the players - designing the rounds and writing the submissions</li>
     </ul>
@@ -350,7 +350,7 @@ def render_submissions(db, num, show_info):
     entries = f'<h2>entries</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
-        entries += f'<h3 id="{position}">entry #{position}</h3>'
+        entries += f'<h3 id="{position}" class="entry-header">entry #{position}</h3>'
         entries += render_submission(db, r, show_info)
     return entries
 
@@ -486,12 +486,13 @@ def show_round(num):
                         query.pop(idx)
                         query.insert(pos-1, (id, name, pos, locked))
                         break
-                for id, name, _, locked in query:
+                for id, name, pos, locked in query:
+                    events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
                     if id == your_id:
-                        panel += f'<li data-id="me" class="player you locked">{name} (you!)</li>'
+                        panel += f'<li data-id="me" class="player you locked" {events}>{name} (you!)</li>'
                     else:
                         lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
-                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}">↕ {name} {lock_button}</li>'
+                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}" {events}>{name} {lock_button}</li>'
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
@@ -660,12 +661,11 @@ def take(num):
                     ).fetchone()
                     anchor = f"c{id}"
                     logging.info(f"{user.id} commented on {parent} (id: {id}, persona: {persona}, reply: {reply}): {content}")
-                    msg = f"at <https://cg.esolangs.gay/{num}#c{id}>:\n{content}"
                     reply_author = None
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
                     if config.canon_url:
-                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "content": content, "url": f"https://cg.esolangs.gay/{num}#c{id}"})
+                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "content": content, "url": f"https://cg.esolangs.gay/{num}/#c{id}"})
             case ("delete-comment", 2 | 3):
                 id = form["id"]
                 owner, pos = db.execute(
