@@ -506,7 +506,8 @@ def show_round(num):
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
-                for name, in db.execute("SELECT name FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ?", (your_id,)):
+                query = db.execute("SELECT name FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ?", (num,)).fetchall()
+                for name, in query:
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
                 if not discord.authorized:
