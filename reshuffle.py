@@ -1,6 +1,4 @@
 import sqlite3
-import random
-import datetime
 
 
 db = sqlite3.connect("the.db")
