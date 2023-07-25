@@ -363,7 +363,7 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = ["py", "c", "rs", "js", "ts", "bf", "hs", "lua", "zig", "cpp", "go", "d", "raku", "apl", "sml", "ocaml", "f#", "erlang", "pony", "ada", "vim", "sed", "nix", "sh", "befunge", "image", "text", None]
+LANGUAGES = ["py", "c", "rs", "js", "ts", "bf", "hs", "lua", "zig", "cpp", "go", "d", "pl", "scm", "raku", "apl", "sml", "ocaml", "f#", "erlang", "pony", "ada", "vim", "sed", "nix", "sh", "befunge", "image", "text", None]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
