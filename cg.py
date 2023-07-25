@@ -469,7 +469,7 @@ def show_round(num):
                                "INNER JOIN People ON People.id = Submissions.author_id "
                                "LEFT JOIN (Guesses INNER JOIN Submissions as Submissions2 ON Submissions2.round_num = Guesses.round_num AND Guesses.actual = Submissions2.author_id) "
                                "ON Guesses.round_num = Submissions.round_num AND Guesses.player_id = ? AND Guesses.guess = People.id "
-                               "WHERE Submissions.round_num = ? ORDER BY Submissions2.position, People.name COLLATE NOCASE", (your_id, num)).fetchall()
+                               "WHERE Submissions.round_num = ? ORDER BY Submissions2.position NULLS LAST, People.name COLLATE NOCASE", (your_id, num)).fetchall()
             if discord.authorized and any(id == your_id for id, _, _, _ in query):
                 finished, = db.execute("SELECT finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()
                 panel = f'''
@@ -486,7 +486,7 @@ def show_round(num):
                         query.pop(idx)
                         query.insert(pos-1, (id, name, pos, locked))
                         break
-                for id, name, pos, locked in query:
+                for id, name, _, locked in query:
                     events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
                     if id == your_id:
                         panel += f'<li data-id="me" class="player you locked" {events}>{name} (you!)</li>'
