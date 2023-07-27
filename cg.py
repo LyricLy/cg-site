@@ -768,23 +768,21 @@ def stats():
     if len(rounds) != round_count:
         top_buttons.append('<a href="?after=1">all time leaderboard</a>')
 
-    lb = defaultdict(lambda: [0]*8)
+    lb = defaultdict(lambda: [0]*7)
     for num, in rounds:
-        likers, = db.execute("SELECT COUNT(DISTINCT player_id) FROM Likes WHERE round_num = ?", (num,)).fetchone()
         players = list(score_round(num))
         for rank, (player, total, plus, bonus, minus) in players:
             p = lb[player]
             for i, x in enumerate((total, plus, bonus, minus, 1, len(players) > 2 and rank == 1)):
                 p[i] += x
-            p[-1] += likers
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num >= ? AND round_num <= ? GROUP BY liked", (after_round, before_round)):
-        lb[player][-2] += count
+        lb[player][-1] += count
 
-    cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "in", "won", "tot/r", "+/r", "-/r", *["likes", "pop"]*(before_round >= 13)]
+    cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "in", "won", "tot/r", "+/r", "-/r", *["likes"]*(before_round >= 13)]
     rows = []
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
-    for rank, (player, (total, plus, bonus, minus, played, won, likes, likers_seen)) in e:
+    for rank, (player, (total, plus, bonus, minus, played, won, likes)) in e:
         if not played:
             continue
         name = get_name(player)
@@ -800,8 +798,7 @@ def stats():
             total / played,
             plus / played,
             minus / played,
-            *[likes,
-            likes / likers_seen if likers_seen and played >= 4 else -1]*(before_round >= 13),
+            *[likes]*(before_round >= 13),
         ])
 
     table = build_table(cols, rows)
