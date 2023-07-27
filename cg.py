@@ -777,7 +777,7 @@ def stats():
             for i, x in enumerate((total, plus, bonus, minus, 1, len(players) > 2 and rank == 1)):
                 p[i] += x
             p[-1] += likers
-    for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num <= ? GROUP BY liked", (before_round,)):
+    for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num >= ? AND round_num <= ? GROUP BY liked", (after_round, before_round)):
         lb[player][-2] += count
 
     cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "in", "won", "tot/r", "+/r", "-/r", *["likes", "pop"]*(before_round >= 13)]
