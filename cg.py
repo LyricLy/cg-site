@@ -741,11 +741,33 @@ def build_table(cols, rows):
     table += "</table>"
     return table
 
+SEASON_EVERY = 10
+
 @app.route("/stats/")
 def stats():
     db = get_db()
-    before_round = float(flask.request.args.get("round", float("inf")))
-    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num <= ?", (before_round,)).fetchall()
+    round_count, = db.execute("SELECT COUNT(*) FROM Rounds WHERE stage = 3").fetchone()
+    try:
+        after_round = min(max(int(flask.request.args.get("after", ((round_count-1) // SEASON_EVERY * SEASON_EVERY) + 1)), 1), round_count)
+        before_round = min(max(int(flask.request.args.get("before", round_count)), 1), round_count)
+    except ValueError:
+        flask.abort(400)
+    rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num >= ? AND num <= ?", (after_round, before_round)).fetchall()
+
+    top_buttons = []
+    season, off = divmod(after_round - 1, SEASON_EVERY)
+    if not off and before_round == min(round_count, after_round + SEASON_EVERY - 1):
+        top_buttons.append(f"season {season+1}")
+        for name, n in [("previous", season-1), ("next", season+1)]:
+            start = n * SEASON_EVERY + 1
+            end = (n+1) * SEASON_EVERY
+            if 1 <= start <= round_count:
+                top_buttons.append(f'<a href="?after={start}&before={min(end, round_count)}">{name} season</a>')
+    if not top_buttons:
+        top_buttons.append('<a href=".">latest season</a>')
+    if len(rounds) != round_count:
+        top_buttons.append('<a href="?after=1">all time leaderboard</a>')
+
     lb = defaultdict(lambda: [0]*8)
     for num, in rounds:
         likers, = db.execute("SELECT COUNT(DISTINCT player_id) FROM Likes WHERE round_num = ?", (num,)).fetchone()
@@ -805,8 +827,9 @@ def stats():
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
     <form>
-      as of round <input name="round" type="number" value="{len(rounds)}" min="1"> <button type="submit">go</button>
+      from round <input name="after" type="number" value="{after_round}" min="1"> to <input name="before" type="number" value="{before_round}"> <button type="submit">go</button>
     </form>
+    {' &bull; '.join(top_buttons)}
     {table}
   </body>
 </html>
