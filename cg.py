@@ -506,7 +506,7 @@ def show_round(num):
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
-                query = db.execute("SELECT name FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ?", (num,)).fetchall()
+                query = db.execute("SELECT name FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ? ORDER BY name COLLATE NOCASE", (num,)).fetchall()
                 for name, in query:
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
