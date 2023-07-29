@@ -890,7 +890,7 @@ def canon_settings():
         settings = requests.get(config.canon_url + f"/users/{user}/settings").json()
         personas = requests.get(config.canon_url + f"/users/{user}/personas").json()
         panel = '<form method="POST"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p>'
-        panel += f'<ul><li><strong>{get_name(user)}</strong></li>'
+        panel += f'<ul>'
         for persona in personas:
             end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
             panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
