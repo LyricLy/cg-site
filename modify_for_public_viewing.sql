@@ -3,4 +3,4 @@ DROP TABLE Comments;
 ALTER TABLE Files DROP COLUMN hl_content;
 ALTER TABLE Submissions DROP COLUMN persona;
 ALTER TABLE Submissions DROP COLUMN finished_guessing;
-ALTER TABLE Guessed DROP COLUMN locked;
+ALTER TABLE Guesses DROP COLUMN locked;
