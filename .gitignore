@@ -4,5 +4,3 @@ config.py
 files/
 esolangs.gay-ssl-bundle/
 data.log
-static/*.html
-static/*.txt
