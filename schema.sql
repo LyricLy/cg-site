@@ -16,6 +16,7 @@ CREATE TABLE Submissions (
     author_id INTEGER NOT NULL,
     round_num INTEGER NOT NULL,
     submitted_at TIMESTAMP,
+    cached_display TEXT,
     position INTEGER,
     persona INTEGER NOT NULL,
     finished_guessing INTEGER NOT NULL DEFAULT 0,
@@ -30,7 +31,6 @@ CREATE TABLE Files (
     author_id INTEGER NOT NULL,
     round_num INTEGER NOT NULL,
     content BLOB NOT NULL,
-    hl_content TEXT,
     lang TEXT,
     PRIMARY KEY (name, round_num),
     FOREIGN KEY (author_id, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE
