@@ -169,10 +169,12 @@ def make_tar(num, compression=""):
     user_id = discord.fetch_user().id if discord.authorized else None
     f = io.BytesIO()
     with tarfile.open(mode=f"w:{compression}", fileobj=f) as tar:
-        for name, content, position in get_db().execute("SELECT name, content, position FROM Files "
-                                                        "INNER JOIN Submissions ON Submissions.round_num = Files.round_num AND Submissions.author_id = Files.author_id "
-                                                        "INNER JOIN Rounds ON Rounds.num = Files.round_num "
-                                                        "WHERE Files.round_num = ? AND (stage <> 1 OR Files.author_id = ?)", (num, user_id)):
+        for name, content, position in get_db().execute(
+            "SELECT name, content, position FROM Files "
+            "INNER JOIN Submissions ON Submissions.round_num = Files.round_num AND Submissions.author_id = Files.author_id "
+            "INNER JOIN Rounds ON Rounds.num = Files.round_num "
+            "WHERE Files.round_num = ? AND (stage <> 1 OR Files.author_id = ?)", (num, user_id)
+        ):
             info = tarfile.TarInfo(f"{num}/{position}/{name}")
             info.size = len(content)
             tar.addfile(info, io.BytesIO(content))
@@ -284,9 +286,7 @@ def lang_display(lang):
         return "Embedded page"
     return get_lexer_by_name(lang).name
 
-def render_file(name, content, lang, url=None, lang_dropdowns=False):
-    file = ""
-
+def render_file(name, content, lang, url=None, dropdown_name=None):
     filetype = magic.from_buffer(content)
     # remove appalling attempts at guessing language
     filetype = re.sub(r"^.+? (?:source|script|program), |(?<=text) executable", "", filetype)
@@ -296,11 +296,12 @@ def render_file(name, content, lang, url=None, lang_dropdowns=False):
         filetype = f"external link to {yarl.URL(url).host}"
         lang = None
 
+    file = ""
     name = bleach.clean(name)
     header_name = name if not url else f'<a href="{url}">{name}</a>'
     header = f'{header_name} <small><em>{filetype}</em></small>'
-    if lang_dropdowns:
-        header += f' <select name="{name}" id="{name}">'
+    if dropdown_name:
+        header += f' <select name="{dropdown_name}">'
         for language in LANGUAGES:
             selected = " selected"*(language == lang)
             header += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
@@ -346,7 +347,7 @@ def _render_file_contents(fs, url_stem, lang_dropdowns):
             out += '</div></details>'
         else:
             for path, full_name, content, lang in g:
-                out += render_file(path.name, content, lang, url_stem + full_name if url_stem else None, lang_dropdowns)
+                out += render_file(path.name, content, lang, url_stem + full_name if url_stem else None, full_name if lang_dropdowns else None)
     return out
 
 def render_file_contents(fs, url_stem=None, lang_dropdowns=False):
@@ -488,6 +489,8 @@ def show_round(num):
   <input type="hidden" name="type" value="upload">
   <label for="files">upload one or more files</label>
   <input type="file" id="files" name="files" multiple><br>
+  <label for="dirs">and/or directories</label>
+  <input type="file" id="dirs" name="files" multiple webkitdirectory><br>
   <input type="submit" value="submit">
 </form>
 """
