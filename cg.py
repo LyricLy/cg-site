@@ -12,6 +12,7 @@ import os
 import json
 import logging
 from collections import defaultdict
+from pathlib import PurePosixPath
 
 import bleach
 import bz3
@@ -331,25 +332,25 @@ def render_file(name, content, lang, url=None, lang_dropdowns=False):
 
     return file
 
-def _render_file_contents(fs, url, lang_dropdowns, d=""):
+def root_dir(r):
+    return r[0].parts[0] if len(r[0].parts) > 1 else None
+
+def _render_file_contents(fs, url_stem, lang_dropdowns):
     out = ""
-    for dir_name, g in itertools.groupby(fs, lambda r: [float("nan"), *r[0].removeprefix(d).split("/", 1)][-2]):
-        if dir_name == dir_name:
+    fs.sort(key=lambda r: (not root_dir(r), r[0]))
+    for dir_name, g in itertools.groupby(fs, root_dir):
+        if dir_name:
             out += f'<details><summary>dir <strong>{dir_name}</strong></summary><div class="comments">'
-            out += _render_file_contents(g, url, lang_dropdowns, d + dir_name + "/")
+            new_fs = [(path.relative_to(dir_name), *r) for path, *r in g]
+            out += _render_file_contents(new_fs, url_stem, lang_dropdowns)
             out += '</div></details>'
         else:
-            name, content, lang = next(g)
-            out += render_file(name.removeprefix(d), content, lang, url + name if url else None, lang_dropdowns)
+            for path, full_name, content, lang in g:
+                out += render_file(path.name, content, lang, url_stem + full_name if url_stem else None, lang_dropdowns)
     return out
 
-def good_sort(r):
-    p = r[0].split("/")
-    return [f"/{x}" for x in p[:-1]] + [p[-1]]
-
-def render_file_contents(fs, url=None, lang_dropdowns=False):
-    fs.sort(key=good_sort)
-    return _render_file_contents(fs, url, lang_dropdowns)
+def render_file_contents(fs, url_stem=None, lang_dropdowns=False):
+    return _render_file_contents([(PurePosixPath(name), name, *r) for name, *r in fs], url_stem, lang_dropdowns)
 
 def render_files(db, num, author, lang_dropdowns=False):
     fs = db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)).fetchall()
@@ -387,7 +388,7 @@ def render_submission(db, row, show_info, written_by=True):
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
-    if not cached_display:
+    if not cached_display or not config.cache_display:
         cached_display = render_files(db, num, author)
         db.execute("UPDATE Submissions SET cached_display = ? WHERE round_num = ? AND author_id = ?", (cached_display, num, author))
         db.commit()
