@@ -100,7 +100,7 @@ def index():
 </html>
 """
 
-@app.route("/<int:num>/<name>")
+@app.route("/<int:num>/<path:name>")
 def download_file(num, name):
     user_id = discord.fetch_user().id if discord.authorized else None
     f = get_db().execute("SELECT Files.content FROM Files INNER JOIN Rounds ON Rounds.num = Files.round_num "
@@ -108,7 +108,6 @@ def download_file(num, name):
     if not f:
         flask.abort(404)
     resp = flask.send_file(io.BytesIO(f[0]), mimetype="application/octet-stream")
-    resp.headers["X-Robots-Tag"] = "noindex"
     return resp
 
 @app.route("/files/<name>")
@@ -198,14 +197,14 @@ def list_archive(content):
 
 @app.route("/<int:num>.tar.bz2")
 def download_round_bzip2(num):
-    return flask.send_file(make_tar(num, "bz2"), as_attachment=True, download_name=f"{num}.tar.bz2")
+    return flask.send_file(make_tar(num, "bz2"), mimetype="application/x-bzip2")
 
 @app.route("/<int:num>.tar.bz3")
 def download_round_bzip3(num):
     out = io.BytesIO()
     bz3.compress_file(make_tar(num), out, 1024*1024)
     out.seek(0)
-    return flask.send_file(out, as_attachment=True, download_name=f"{num}.tar.bz3")
+    return flask.send_file(out, mimetype="application/octet-stream")
 
 def get_name(i):
     return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
