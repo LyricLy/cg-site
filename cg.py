@@ -4,15 +4,17 @@ import sys
 import sqlite3
 import datetime
 import io
+import itertools
 import re
-import subprocess
 import tarfile
+import zipfile
 import os
 import json
 import logging
 from collections import defaultdict
 
 import bleach
+import bz3
 import charset_normalizer
 import magic
 import mistune
@@ -176,16 +178,31 @@ def make_tar(num, compression=""):
     f.seek(0)
     return f
 
+def list_archive(content):
+    f = io.BytesIO(content)
+    if [bz3.test_file(f), f.seek(0)][0]:
+        out = io.BytesIO()
+        bz3.decompress_file(f, out)
+        out.seek(0)
+        f = out
+    try:
+        with tarfile.open(fileobj=f, errorlevel=2) as tar:
+            return [(n, g.read()) for n in tar.getnames() if (g := tar.extractfile(n))]
+    except tarfile.TarError:
+        f.seek(0)
+        with zipfile.ZipFile(f) as z:
+            return [(n, z.read(n)) for n in z.namelist() if not n.endswith("/")]
+
 @app.route("/<int:num>.tar.bz2")
 def download_round_bzip2(num):
     return flask.send_file(make_tar(num, "bz2"), as_attachment=True, download_name=f"{num}.tar.bz2")
 
 @app.route("/<int:num>.tar.bz3")
 def download_round_bzip3(num):
-    proc = subprocess.run(["bzip3", "-e"], input=make_tar(num).getvalue(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if proc.returncode != 0:
-        raise Exception(f"bzip3: {proc.stderr}")
-    return flask.send_file(io.BytesIO(proc.stdout), as_attachment=True, download_name=f"{num}.tar.bz3")
+    out = io.BytesIO()
+    bz3.compress_file(make_tar(num), out, 1024*1024)
+    out.seek(0)
+    return flask.send_file(out, as_attachment=True, download_name=f"{num}.tar.bz3")
 
 def get_name(i):
     return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
@@ -266,54 +283,81 @@ def lang_display(lang):
         return "Embedded page"
     return get_lexer_by_name(lang).name
 
+def render_file(name, content, lang, url=None, lang_dropdowns=False):
+    file = ""
+
+    filetype = magic.from_buffer(content)
+    # remove appalling attempts at guessing language
+    filetype = re.sub(r"^.+? (?:source|script|program), |(?<=text) executable", "", filetype)
+
+    if str(lang).startswith("external") and url:
+        url = lang.removeprefix("external ")
+        filetype = f"external link to {yarl.URL(url).host}"
+        lang = None
+
+    name = bleach.clean(name)
+    header_name = name if not url else f'<a href="{url}">{name}</a>'
+    header = f'{header_name} <small><em>{filetype}</em></small>'
+    if lang_dropdowns:
+        header += f' <select name="{name}" id="{name}">'
+        for language in LANGUAGES:
+            selected = " selected"*(language == lang)
+            header += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
+        header += "</select>"
+
+    if lang is None or lang == "image" and not url:
+        file += f'{header}<br>'
+    else:
+        file += f'<details><summary>{header}</summary>'
+        if lang.startswith("iframe"):
+            u = lang.removeprefix("iframe ")
+            file += f'<iframe src="/files/{u}" width="1280" height="720"></iframe>'
+        elif lang == "image":
+            file += f'<img src="{url}">'
+        elif lang == "pdf":
+            file += f'<object type="application/pdf" data="{url}" width="1280" height="720"></object>'
+        elif lang == "archive":
+            file += '<div class="comments">'
+            file += render_file_contents([(n, c, guess_language(n, c)) for n, c in list_archive(content)])
+            file += '</div>'
+        else:
+            try:
+                text = content.decode()
+            except UnicodeDecodeError:
+                best = charset_normalizer.from_bytes(content).best()
+                text = str(best) if best else "cg: couldn't decode file contents"
+            file += highlight(text, get_lexer_by_name(lang), formatter)
+        file += "</details>"
+
+    return file
+
+def _render_file_contents(fs, url, lang_dropdowns, d=""):
+    out = ""
+    for dir_name, g in itertools.groupby(fs, lambda r: [float("nan"), *r[0].removeprefix(d).split("/", 1)][-2]):
+        if dir_name == dir_name:
+            out += f'<details><summary>dir <strong>{dir_name}</strong></summary><div class="comments">'
+            out += _render_file_contents(g, url, lang_dropdowns, d + dir_name + "/")
+            out += '</div></details>'
+        else:
+            name, content, lang = next(g)
+            out += render_file(name.removeprefix(d), content, lang, url + name if url else None, lang_dropdowns)
+    return out
+
+def good_sort(r):
+    p = r[0].split("/")
+    return [f"/{x}" for x in p[:-1]] + [p[-1]]
+
+def render_file_contents(fs, url=None, lang_dropdowns=False):
+    fs.sort(key=good_sort)
+    return _render_file_contents(fs, url, lang_dropdowns)
+
 def render_files(db, num, author, lang_dropdowns=False):
-    files = ""
-    for name, content, hl_content, lang in db.execute("SELECT name, content, hl_content, lang FROM Files WHERE author_id = ? AND round_num = ? ORDER BY name", (author, num)):
-        name = bleach.clean(name)
-        if str(lang).startswith("external"):
-            url = lang.removeprefix("external ")
-            filetype = f"external link to {yarl.URL(url).host}"
-            lang = None
-        else:
-            url = f"/{num}/{name}"
-            filetype = magic.from_buffer(content)
-            # remove appalling attempts at guessing language
-            filetype = re.sub(r"^.+? (?:source|script|program), |(?<=text) executable", "", filetype)
-        header = f'<a href="{url}">{name}</a> <small><em>{filetype}</em></small>'
-        if lang_dropdowns:
-            header += f' <select name="{name}" id="{name}">'
-            for language in LANGUAGES:
-                selected = " selected"*(language == lang)
-                header += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
-            header += "</select>"
-        if lang is None:
-            files += f'{header}<br>'
-        else:
-            files += f'<details><summary>{header}</summary>'
-            if lang.startswith("iframe"):
-                url = "/files/" + lang.removeprefix("iframe ")
-                files += f'<iframe src="{url}" width="1280" height="720"></iframe>'
-            elif lang == "image":
-                files += f'<img src="/{num}/{name}">'
-            elif lang == "pdf":
-                files += f'<object type="application/pdf" data="/{num}/{name}" width="1280" height="720"></object>'
-            else:
-                if not hl_content:
-                    try:
-                        text = content.decode()
-                    except UnicodeDecodeError:
-                        best = charset_normalizer.from_bytes(content).best()
-                        text = str(best) if best else "cg: couldn't decode file contents"
-                    hl_content = highlight(text, get_lexer_by_name(lang), formatter)
-                    db.execute("UPDATE Files SET hl_content = ? WHERE round_num = ? AND name = ?", (hl_content, num, name))
-                    db.commit()
-                files += hl_content
-            files += "</details>"
-    return files
+    fs = db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)).fetchall()
+    return render_file_contents(fs, f"/{num}/", lang_dropdowns)
 
 
 def render_submission(db, row, show_info, written_by=True):
-    author, num, submitted_at, position = row
+    author, num, submitted_at, cached_display, position = row
     entries = ""
     if show_info:
         name = get_name(author)
@@ -343,12 +387,16 @@ def render_submission(db, row, show_info, written_by=True):
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
-    entries += render_files(db, num, author)
+    if not cached_display:
+        cached_display = render_files(db, num, author)
+        db.execute("UPDATE Submissions SET cached_display = ? WHERE round_num = ? AND author_id = ?", (cached_display, num, author))
+        db.commit()
+    entries += cached_display
     return entries
 
 def render_submissions(db, num, show_info):
     entries = f'<h2>entries</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
-    for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<h3 id="{position}" class="entry-header">entry #{position}</h3>'
         entries += render_submission(db, r, show_info)
@@ -363,7 +411,11 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = ["py", "c", "rs", "js", "ts", "bf", "hs", "lua", "zig", "cpp", "go", "d", "pl", "scm", "raku", "apl", "sml", "ocaml", "f#", "erlang", "pony", "ada", "vim", "sed", "nix", "sh", "befunge", "image", "text", None]
+LANGUAGES = [
+    "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "zig", "cpp", "go", "java", "kotlin", "groovy",
+    "d", "swift", "pl", "scm", "raku", "apl", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
+    "vim", "sed", "nix", "sh", "xml", "yaml", "json", "befunge", "image", "text", None
+]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
 <meta charset="utf-8">
@@ -579,6 +631,17 @@ def show_round(num):
 </html>
 """
 
+def guess_language(filename, content):
+    if not content or len(content) > 64*1024:
+        return None
+    try:
+        guess = min(get_lexer_for_filename(filename).aliases, key=len)
+    except ClassNotFound:
+        guess = "image" if filename.lower().endswith((".png", ".jpg", ".jpeg")) else "text"
+    if guess not in LANGUAGES:
+        return "text"
+    return guess
+
 @app.route("/<int:num>/", methods=["POST"])
 @auth
 def take(num):
@@ -601,15 +664,8 @@ def take(num):
                 db.execute("INSERT OR REPLACE INTO Submissions (author_id, round_num, submitted_at) VALUES (?, ?, ?)", (user.id, num, datetime.datetime.now(datetime.timezone.utc)))
                 db.execute("DELETE FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id))
                 for file in files:
-                    try:
-                        guess = min(get_lexer_for_filename(file.filename).aliases, key=len)
-                    except ClassNotFound:
-                        guess = "image" if file.filename.lower().endswith((".png", ".jpg", ".jpeg")) else "text"
                     b = file.read()
-                    if not b or len(b) > 64*1024:
-                        guess = None
-                    elif guess not in LANGUAGES:
-                        guess = "text"
+                    guess = guess_language(file.filename, b)
                     db.execute("INSERT INTO Files (name, author_id, round_num, content, lang) VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
                 logging.info(f"accepted files {', '.join(str(x.filename) for x in files)} from {user.id}")
             case ("langs", 1):
@@ -848,7 +904,7 @@ def user_stats(player):
     scourges = build_table(cols, db.execute(FIND.format(SCOURGES), (player_id,)).fetchall())
     s = ""
     sc = 0
-    for r in db.execute("SELECT author_id, round_num, submitted_at, position FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num", (player_id,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num", (player_id,)):
         position = r["position"]
         num = r["round_num"]
         s += f'<h3 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h3>'
