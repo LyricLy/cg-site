@@ -21,12 +21,12 @@ p + ul {
     margin-top: -10px;
 }
 
-:not(div) > pre, :not(pre) > code {
+pre:not(.highlight pre), :not(pre) > code {
     background-color: #EEE;
     white-space: pre-wrap;
 }
 
-pre {
+.highlight pre {
     font-size: 12px;
     margin: 8px 2px;
 }
