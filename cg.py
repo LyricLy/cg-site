@@ -721,7 +721,7 @@ def take(num):
                     owner, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (edit,)).fetchone()
                     if user.id != owner:
                         flask.abort(403)
-                    db.execute("UPDATE Comments SET content = ?, edited_at = ?, reply = ?, persona = ?, og_persona = COALESCE(og_persona, persona) WHERE id = ?", (content, time, reply, persona, edit))
+                    db.execute("UPDATE Comments SET content = ?, edited_at = ?, reply = ?, persona = ?, og_persona = IIF(og_persona IS NULL AND ?4 != persona, persona, og_persona) WHERE id = ?", (content, time, reply, persona, edit))
                     anchor = f"c{edit}"
                     logging.info(f"{user.id} edited their comment {edit} (persona: {persona}, reply: {reply}): {content}")
                 else:
