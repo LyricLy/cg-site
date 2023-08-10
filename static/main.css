@@ -24,6 +24,7 @@ p + ul {
 pre:not(.highlight pre), :not(pre) > code {
     background-color: #EEE;
     white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
 .highlight pre {
