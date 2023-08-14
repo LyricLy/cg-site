@@ -907,7 +907,7 @@ def user_stats(player):
     scourges = build_table(cols, db.execute(FIND.format(SCOURGES), (player_id,)).fetchall())
     s = ""
     sc = 0
-    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num", (player_id,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num DESC", (player_id,)):
         position = r["position"]
         num = r["round_num"]
         s += f'<h3 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h3>'
