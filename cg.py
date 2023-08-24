@@ -288,7 +288,7 @@ def lang_display(lang):
 def render_file(name, content, lang, url=None, dropdown_name=None):
     filetype = magic.from_buffer(content)
     # remove appalling attempts at guessing language
-    filetype = re.sub(r"^.+? (?:source|script(?: executable)?|program), |(?<=text) executable", "", filetype)
+    filetype = re.sub(r"^.+? (?:source|script(?: executable)?|program|document), |(?<=text) executable", "", filetype)
 
     if str(lang).startswith("external") and url:
         url = lang.removeprefix("external ")
