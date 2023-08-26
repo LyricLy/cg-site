@@ -258,7 +258,7 @@ def render_comments(db, num, parent, show_info):
                 extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
             else:
                 extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(row["parent"]), row["content"], row["persona"], row["reply"])})">edit</button>')
-            if owns or user.id == 319753218592866315:
+            if owns or user.id == config.admin_id:
                 extras.append(f'<form method="post" action="/{num}/" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
         comments += ' ' + ' '.join(extras)
         comments += f'{markdown(row["content"])}</div><hr>'
@@ -734,7 +734,7 @@ def take(num):
                     "SELECT Comments.author_id, position FROM Comments INNER JOIN Submissions ON Submissions.round_num = Comments.round_num AND Submissions.author_id = parent WHERE id = ?",
                     (id,)
                 ).fetchone()
-                if user.id not in (owner, 319753218592866315):
+                if user.id not in (owner, config.admin_id):
                     flask.abort(403)
                 db.execute("DELETE FROM Comments WHERE id = ?", (id,))
                 anchor = str(pos)
