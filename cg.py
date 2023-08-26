@@ -432,20 +432,8 @@ META = """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
 def score_round(num):
-    lb = get_db().execute("""
-    SELECT author_id,
-           (SELECT COUNT(*) FROM Guesses WHERE player_id = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num),
-           (SELECT COUNT(*) FROM Guesses
-            INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
-            WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num),
-           (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num)
-    FROM Submissions WHERE round_num = ?""", (num,))
-    e = rank_enumerate(((author, plus+bonus-minus, plus, bonus, minus) for author, plus, bonus, minus in lb), key=lambda t: t[1:4])
-    if t := TIEBREAKS.get(num):
-        l = [(t.get(d[0], r), d) for r, d in e]
-        l.sort(key=lambda t: t[0])
-        return l
-    return e
+    lb = get_db().execute("""SELECT * FROM Scores WHERE round_num = ?""", (num,))
+    return [(x["rank"], (x["player_id"], x["total"], x["plus"], x["bonus"], x["minus"])) for x in lb]
 
 HELL_QUERY = """
 WITH other_submissions AS (
@@ -760,33 +748,6 @@ def take(num):
         if exc := sys.exception():
             raise exc
         return flask.redirect(flask.url_for("show_round", num=num, _anchor=anchor))
-
-# TODO consider moving into DB
-TIEBREAKS = {
-    6: {
-        241757436720054273: 2,
-        354579932837445635: 2,
-    },
-    12: {
-        345300752975003649: 1,
-        319753218592866315: 2,
-    },
-    23: {
-        156021301654454272: 2,
-    },
-    28: {
-        356107472269869058: 2,
-    },
-    29: {
-        521726876755165184: 2,
-    },
-    32: {
-        166910808305958914: 2,
-    },
-    35: {
-        339009650592710656: 2,
-    },
-}
 
 def build_table(cols, rows):
     table = '<table class="sortable"><thead></tr>'

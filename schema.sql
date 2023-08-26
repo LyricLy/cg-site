@@ -82,3 +82,32 @@ CREATE TABLE Comments (
     FOREIGN KEY (parent, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (reply) REFERENCES Comments(id) ON DELETE SET NULL
 );
+
+CREATE TABLE Tiebreaks (
+    round_num INTEGER NOT NULL,
+    player_id INTEGER NOT NULL,
+    new_rank INTEGER NOT NULL,
+    PRIMARY KEY (round_num, player_id),
+    FOREIGN KEY (player_id, round_num) REFERENCES Submissions(author_id, round_num)
+);
+
+CREATE VIEW Scores
+AS SELECT 
+    *, 
+    COALESCE(
+        (SELECT new_rank FROM Tiebreaks AS T WHERE T.round_num = S.round_num AND T.player_id = S.player_id),
+        RANK() OVER (PARTITION BY round_num ORDER BY plus+bonus-minus DESC, plus DESC)
+    ) AS rank,
+    plus+bonus-minus AS total
+FROM (SELECT
+    round_num,
+    author_id AS player_id,
+    (SELECT COUNT(*) FROM Guesses WHERE player_id = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num) AS plus,
+    (
+        SELECT COUNT(*) FROM Guesses
+        INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
+        WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num
+    ) AS bonus,
+    (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num) AS minus
+FROM Submissions) AS S;
+
