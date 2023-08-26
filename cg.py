@@ -586,7 +586,7 @@ def show_round(num):
             entries = render_submissions(db, num, True)
             results = "<ol>"
             for idx, author, total, plus, bonus, minus, won in score_round(num):
-                bonus_s = f" ~{bonus}"*(num in (12, 13))
+                bonus_s = f" ~{bonus}"*(config.impersonation_since <= num < config.impersonation_until)
                 crown = "👑 "*won
                 results += f'<li value="{idx}"><details><summary>{crown}<strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
                 for guess, actual, pos in db.execute(
@@ -771,7 +771,7 @@ def stats():
     round_count, = db.execute("SELECT COUNT(*) FROM Rounds WHERE stage = 3").fetchone()
     try:
         after_round = min(max(int(flask.request.args.get("after", ((round_count-1) // SEASON_EVERY * SEASON_EVERY) + 1)), 1), round_count)
-        before_round = min(max(int(flask.request.args.get("before", round_count)), 1), round_count)
+        before_round = min(max(int(flask.request.args.get("before", round_count)), after_round), round_count)
     except ValueError:
         flask.abort(400)
     rounds = db.execute("SELECT num FROM Rounds WHERE stage = 3 AND num >= ? AND num <= ?", (after_round, before_round)).fetchall()
@@ -800,7 +800,9 @@ def stats():
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num >= ? AND round_num <= ? GROUP BY liked", (after_round, before_round)):
         lb[player][-1] += count
 
-    cols = ["rank", "player", "tot", "+", "-", *["~"]*(before_round >= 12), "in", "won", "tot/r", "+/r", "-/r", *["likes"]*(before_round >= 13)]
+    bonus_col = before_round >= config.impersonation_since
+    like_col = before_round >= config.likes_since
+    cols = ["rank", "player", "tot", "+", "-", *["~"]*bonus_col, "in", "won", "tot/r", "+/r", "-/r", *["likes"]*like_col]
     rows = []
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
@@ -814,13 +816,13 @@ def stats():
             total,
             plus,
             minus,
-            *[bonus]*(before_round >= 12),
+            *[bonus]*bonus_col,
             played,
             won,
             total / played,
             plus / played,
             minus / played,
-            *[likes]*(before_round >= 13),
+            *[likes]*like_col,
         ])
 
     table = build_table(cols, rows)
