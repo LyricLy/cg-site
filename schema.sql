@@ -92,7 +92,8 @@ CREATE TABLE Tiebreaks (
 );
 
 CREATE VIEW Scores
-AS SELECT 
+AS SELECT *, COUNT(*) OVER (PARTITION BY round_num) > 1 AND rank == 1 AS won
+FROM (SELECT 
     *, 
     COALESCE(
         (SELECT new_rank FROM Tiebreaks AS T WHERE T.round_num = S.round_num AND T.player_id = S.player_id),
@@ -109,5 +110,4 @@ FROM (SELECT
         WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num
     ) AS bonus,
     (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num) AS minus
-FROM Submissions) AS S;
-
+FROM Submissions) AS S);

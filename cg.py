@@ -432,8 +432,8 @@ META = """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
 def score_round(num):
-    lb = get_db().execute("""SELECT * FROM Scores WHERE round_num = ?""", (num,))
-    return [(x["rank"], (x["player_id"], x["total"], x["plus"], x["bonus"], x["minus"])) for x in lb]
+    lb = get_db().execute("SELECT * FROM Scores WHERE round_num = ?", (num,))
+    return [(x["rank"], x["player_id"], x["total"], x["plus"], x["bonus"], x["minus"], x["won"]) for x in lb]
 
 HELL_QUERY = """
 WITH other_submissions AS (
@@ -585,9 +585,10 @@ def show_round(num):
         case 3:
             entries = render_submissions(db, num, True)
             results = "<ol>"
-            for idx, (author, total, plus, bonus, minus) in score_round(num):
+            for idx, author, total, plus, bonus, minus, won in score_round(num):
                 bonus_s = f" ~{bonus}"*(num in (12, 13))
-                results += f'<li value="{idx}"><details><summary><strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
+                crown = "👑 "*won
+                results += f'<li value="{idx}"><details><summary>{crown}<strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
                 for guess, actual, pos in db.execute(
                     "SELECT guess, actual, position FROM Guesses "
                     "INNER JOIN Submissions ON Submissions.round_num = Guesses.round_num AND Submissions.author_id = Guesses.actual "
@@ -791,10 +792,10 @@ def stats():
 
     lb = defaultdict(lambda: [0]*7)
     for num, in rounds:
-        players = list(score_round(num))
-        for rank, (player, total, plus, bonus, minus) in players:
+        players = score_round(num)
+        for rank, player, total, plus, bonus, minus, won in players:
             p = lb[player]
-            for i, x in enumerate((total, plus, bonus, minus, 1, len(players) > 2 and rank == 1)):
+            for i, x in enumerate((total, plus, bonus, minus, 1, won)):
                 p[i] += x
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num >= ? AND round_num <= ? GROUP BY liked", (after_round, before_round)):
         lb[player][-1] += count
