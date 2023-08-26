@@ -5,3 +5,4 @@ bleach>=4.1.0
 python-magic>=0.4.25
 charset-normalizer>=2.0.12
 mistune>=2.0.0
+bzip3>=0.1.2
