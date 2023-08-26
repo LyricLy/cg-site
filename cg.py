@@ -435,6 +435,11 @@ def score_round(num):
     lb = get_db().execute("SELECT * FROM Scores WHERE round_num = ?", (num,))
     return [(x["rank"], x["player_id"], x["total"], x["plus"], x["bonus"], x["minus"], x["won"]) for x in lb]
 
+def show_spec(db, rnd):
+    last_winner = db.execute("SELECT player_id FROM Scores WHERE round_num = ? AND rank = 1", (rnd["num"]-1,)).fetchone()
+    credit = f"<p>challenge given by <strong>{get_name(*last_winner)}</strong></p>" if last_winner else ""
+    return f"{credit}<h2>specification</h2>{markdown(rnd['spec'])}"
+
 HELL_QUERY = """
 WITH other_submissions AS (
     SELECT author_id, position
@@ -514,8 +519,7 @@ def show_round(num):
     {top}
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
-    <h2>specification</h2>
-    {markdown(rnd['spec'])}
+    {show_spec(db, rnd)}
     <h2>entries</h2>
     <p>{entries}</p>
     <h2>submit</h2>
@@ -575,8 +579,7 @@ def show_round(num):
     {top}
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
-    <h2>specification</h2>
-    {markdown(rnd['spec'])}
+    {show_spec(db, rnd)}
     {panel}
     {entries}
   </body>
@@ -615,8 +618,7 @@ def show_round(num):
     {top}
     <h1>code guessing, round #{num} (completed)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 at {format_time(rnd['stage2_at'])}; ended at {format_time(rnd['ended_at'])}</p>
-    <h2>specification</h2>
-    {markdown(rnd['spec'])}
+    {show_spec(db, rnd)}
     <h2>results</h2>
     {results}
     {entries}
