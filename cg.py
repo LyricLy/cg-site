@@ -436,9 +436,7 @@ def score_round(num):
     return [(x["rank"], x["player_id"], x["total"], x["plus"], x["bonus"], x["minus"], x["won"]) for x in lb]
 
 def show_spec(db, rnd):
-    last_winner = db.execute("SELECT player_id FROM Scores WHERE round_num = ? AND rank = 1", (rnd["num"]-1,)).fetchone()
-    credit = f"<p>challenge given by <strong>{get_name(*last_winner)}</strong></p>" if last_winner else ""
-    return f"{credit}<h2>specification</h2>{markdown(rnd['spec'])}"
+    return f"<h2>specification</h2>{markdown(rnd['spec'])}"
 
 HELL_QUERY = """
 WITH other_submissions AS (
