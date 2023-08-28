@@ -432,8 +432,7 @@ META = """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
 def score_round(num):
-    lb = get_db().execute("SELECT * FROM Scores WHERE round_num = ?", (num,))
-    return [(x["rank"], x["player_id"], x["total"], x["plus"], x["bonus"], x["minus"], x["won"]) for x in lb]
+    return get_db().execute("SELECT rank, player_id, total, plus, bonus, minus, won FROM Scores WHERE round_num = ? ORDER BY rank", (num,))
 
 def show_spec(db, rnd):
     return f"<h2>specification</h2>{markdown(rnd['spec'])}"
