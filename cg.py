@@ -43,7 +43,7 @@ app.config |= {
 }
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url)
 markdown = mistune.create_markdown(plugins=["strikethrough", "table", "footnotes"])
-formatter = HtmlFormatter(style="monokai", linenos=True)
+formatter = HtmlFormatter(linenos=True)
 style = formatter.get_style_defs(".code")
 
 
@@ -428,6 +428,7 @@ META = """
 <script src="/main.js" defer></script>
 <script src="https://unpkg.com/konami@1.6.3/konami.js"></script>
 <link rel="stylesheet" href="/main.css">
+<link rel="stylesheet" href="/highlight.css">
 """
 LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="log in with discord"></form>'
 
@@ -510,7 +511,6 @@ def show_round(num):
     <meta content="code guessing #{num}/1" property="og:title">
     <meta content="{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
-    <style>{style}</style>
   </head>
   <body>
     {top}
@@ -569,7 +569,6 @@ def show_round(num):
     <meta content="code guessing #{num}/2" property="og:title">
     <meta content="{len(query)} submissions received. guess by {guess_by.strftime('%B %d (%A)')}." property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
-    <style>{style}</style>
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
   </head>
   <body>
@@ -609,7 +608,6 @@ def show_round(num):
     <meta content="round concluded." property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
     <title>cg #{num}</title>
-    <style>{style}</style>
   </head>
   <body>
     {top}
@@ -887,7 +885,6 @@ def user_stats(player):
     <meta content="see their {sc} awesome entries" property="og:description">
     <meta content="https://cg.esolangs.gay/stats/{player}" property="og:url">
     <title>cg - {player}</title>
-    <style>{style}</style>
   </head>
   <body>
     <a href="/stats">all stats</a>
