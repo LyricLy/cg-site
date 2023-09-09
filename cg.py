@@ -857,7 +857,7 @@ CHUMPS = "player_id = ? AND guess = id"
 SCOURGES = "player_id = id AND guess = ?"
 FIND = "SELECT name, SUM(guess = actual), COUNT(*) AS count, SUM(guess = actual) * 1.0 / COUNT(*) AS ratio FROM People INNER JOIN Guesses ON {} INNER JOIN Rounds ON num = round_num WHERE stage = 3 GROUP BY id HAVING count >= 4 ORDER BY ratio DESC"
 
-@app.route("/stats/<player>")
+@app.route("/stats/<path:player>")
 def user_stats(player):
     db = get_db()
     r = db.execute("SELECT id FROM People WHERE name = ? AND EXISTS(SELECT 1 FROM Submissions WHERE author_id = id)", (player,)).fetchone()
