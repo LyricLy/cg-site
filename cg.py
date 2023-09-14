@@ -127,7 +127,7 @@ def credits():
     <meta content="https://cg.esolangs.gay/credits" property="og:url">
   </head>
   <body>
-    <a href="/index">index</a>
+    <a href="/index/">index</a>
     <h1>credits and acknowledgements</h1>
     <ul>
       <li>umnikos - inital concept</li>
@@ -158,7 +158,7 @@ def info():
     <meta content="https://cg.esolangs.gay/info" property="og:url">
   </head>
   <body>
-    <a href="/index">index</a>
+    <a href="/index/">index</a>
     {m}
   </body>
 </html>
@@ -466,7 +466,7 @@ def show_round(num):
     top_elems = []
     if num > 1:
         top_elems.append(f'<a href="/{num-1}/">prev</a>')
-    top_elems.append('<a href="/index">index</a>')
+    top_elems.append('<a href="/index/">index</a>')
     top_elems.append('<a href="/info">info</a>')
     if db.execute("SELECT * FROM Rounds WHERE num = ?", (num+1,)).fetchone():
         top_elems.append(f'<a href="/{num+1}/">next</a>')
@@ -840,7 +840,7 @@ def stats():
     <title>cg stats</title>
   </head>
   <body>
-    <a href="/index">index</a>
+    <a href="/index/">index</a>
     <h1>code guessing stats</h1>
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
@@ -929,7 +929,7 @@ def canon_settings():
     <title>anon settings</title>
   </head>
   <body>
-    <a href="/index">index</a>
+    <a href="/index/">index</a>
     <h1>anon settings</h2>
     <p>here you can configure the system behind posting anonymously on cg and Esolangs.</p>
     {panel}
