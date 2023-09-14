@@ -17,9 +17,9 @@ canon_url = ""
 # Should be True in production, as pygments is slow
 cache_display = True
 
-# Discord ID of person running the server
+# Discord IDs of admins
 # Currently only allows you to delete other people's comments
-admin_id = 0
+admin_ids = []
 
 # Which rounds to display certain figures for
 # There should be no reason to change these from the provided values
