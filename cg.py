@@ -130,7 +130,7 @@ def credits():
     <a href="/index/">index</a>
     <h1>credits and acknowledgements</h1>
     <ul>
-      <li>umnikos - inital concept</li>
+      <li>umnikos - initial concept</li>
       <li>ubq323 - creating the original ruleset and hosting the first 5 rounds</li>
       <li>HelloBoi, deadbraincoral - helping host round 4</li>
       <li>sonata «pathétique» - helping host the first 5 rounds</li>
