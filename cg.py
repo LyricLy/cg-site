@@ -375,12 +375,11 @@ def render_submission(db, row, show_info, written_by=True):
             entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
         entries += "<details><summary><strong>guesses</strong></summary><ul>"
         for guesser, guess in sorted(db.execute("SELECT player_id, guess FROM Guesses WHERE round_num = ? AND actual = ?", (num, author)), key=lambda x: get_name(x[1])):
+            guess = get_name(guess)
             if guess == author:
-                guess = f"<strong>{get_name(guess)}</strong>"
-            elif guess == target:
-                guess = f"<em>{get_name(guess)}</em>"
-            else:
-                guess = get_name(guess)
+                guess = f"<strong>{guess}</strong>"
+            if guess == target:
+                guess = f"<em>{guess}</em>"
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details>"
     elif discord.authorized:
