@@ -374,11 +374,11 @@ def render_submission(db, row, show_info, written_by=True):
         if num >= 13:
             entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
         entries += "<details><summary><strong>guesses</strong></summary><ul>"
-        for guesser, guess in sorted(db.execute("SELECT player_id, guess FROM Guesses WHERE round_num = ? AND actual = ?", (num, author)), key=lambda x: get_name(x[1])):
-            guess = get_name(guess)
-            if guess == author:
+        for guesser, guess_id in sorted(db.execute("SELECT player_id, guess FROM Guesses WHERE round_num = ? AND actual = ?", (num, author)), key=lambda x: get_name(x[1])):
+            guess = get_name(guess_id)
+            if guess_id == author:
                 guess = f"<strong>{guess}</strong>"
-            if guess == target:
+            if guess_id == target:
                 guess = f"<em>{guess}</em>"
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details>"
