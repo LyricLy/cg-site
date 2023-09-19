@@ -414,7 +414,7 @@ def rank_enumerate(xs, *, key):
 LANGUAGES = [
     "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "zig", "cpp", "go", "java", "kotlin", "groovy",
     "d", "swift", "pl", "scm", "raku", "apl", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
-    "nb", "forth", "factor", "elm", "vim", "sed", "nix", "sh",
+    "nb", "forth", "factor", "elm", "vim", "sed", "nix", "sh", "matlab",
     "md", "html", "css", "xml", "yaml", "json", "befunge", "image", "text", None
 ]
 META = """
