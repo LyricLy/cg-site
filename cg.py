@@ -110,7 +110,7 @@ def download_file(num, name):
     resp = flask.send_file(io.BytesIO(f[0]), mimetype="application/octet-stream")
     return resp
 
-@app.route("/files/<name>")
+@app.route("/files/<path:name>")
 def download_file_available_for_public_access(name):
     return flask.send_from_directory("./files/", name)
 
