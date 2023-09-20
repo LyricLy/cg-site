@@ -382,8 +382,8 @@ def render_submission(db, row, show_info, written_by=True):
                 guess = f"<em>{guess}</em>"
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details>"
-    elif discord.authorized:
-        checked = " togglevalue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, discord.fetch_user().id, author)).fetchone())
+    elif discord.authorized and db.execute("SELECT NULL FROM Submissions WHERE round_num = ? AND author_id = ?", (num, your_id := discord.fetch_user().id)).fetchone():
+        checked = " togglevalue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, your_id, author)).fetchone())
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
     entries += "<br>"
