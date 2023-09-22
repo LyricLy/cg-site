@@ -185,6 +185,7 @@ function edit(id, parent, content, persona, replyId) {
     const panel = document.getElementById("post-" + parent);
     panel.persona.value = persona;
     panel.content.value = content;
+    resize(panel.content);
     const extra = panel.querySelector(".extra");
     extra.innerHTML = ` <span class="edit">editing <a href="#c${id}">#${id}</a> ${unner}<input type="hidden" name="edit" value="${id}"></span>`
     if (replyId) reply(replyId, parent);
