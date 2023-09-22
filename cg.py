@@ -254,9 +254,8 @@ def render_comments(db, num, parent, show_info):
         if discord.authorized:
             user = discord.fetch_user()
             owns = row["author_id"] == user.id
-            if not owns:
-                extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
-            else:
+            extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
+            if owns:
                 extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(row["parent"]), row["content"], row["persona"], row["reply"])})">edit</button>')
             if owns or user.id in config.admin_ids:
                 extras.append(f'<form method="post" action="/{num}/" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
