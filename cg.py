@@ -795,7 +795,7 @@ def stats():
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num >= ? AND round_num <= ? GROUP BY liked", (after_round, before_round)):
         lb[player][-1] += count
 
-    bonus_col = before_round >= config.impersonation_since
+    bonus_col = before_round >= config.impersonation_since and after_round < config.impersonation_until
     like_col = before_round >= config.likes_since
     cols = ["rank", "player", "tot", "+", "-", *["~"]*bonus_col, "in", "won", "tot/r", "+/r", "-/r", *["likes"]*like_col]
     rows = []
