@@ -1,5 +1,6 @@
 import sqlite3
 import datetime
+import os
 import shutil
 import requests
 import config
@@ -10,8 +11,9 @@ num, = db.execute("UPDATE Rounds SET stage = 3, ended_at = ? WHERE stage = 2 RET
 for persona in db.execute("SELECT persona FROM Submissions WHERE round_num = ?", (num,)):
     db.execute("UPDATE Comments SET persona = -1, og_persona = COALESCE(og_persona, persona) WHERE persona = ?", persona)
 db.commit()
-shutil.copy("the.db", "once.db")
-shutil.copy("the.db", "static/the.db")
+os.makedirs("backups", exist_ok=True)
+shutil.copy("the.db", f"backups/{num}.db")
+shutil.copy("the.db", "static")
 with open("modify_for_public_viewing.sql") as f:
     script = f.read()
 public_db = sqlite3.connect("static/the.db")
