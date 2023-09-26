@@ -6,6 +6,7 @@ import datetime
 import io
 import itertools
 import re
+import html
 import tarfile
 import zipfile
 import os
@@ -235,7 +236,7 @@ def fetch_personas():
 def pass_to_js(*args):
     s = ""
     for arg in args:
-        s += json.dumps(arg).replace('"', '&quot;')
+        s += html.escape(json.dumps(arg), quote=True)
         s += ","
     return s
 
@@ -500,6 +501,7 @@ def show_round(num):
             entry_count, = db.execute("SELECT COUNT(*) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
             entries = f"<strong>{entry_count}</strong> entries have been received so far." if entry_count != 1 else "<strong>1</strong> entry has been received so far."
             submit_by = rnd['stage2_at'] or rnd['started_at']+datetime.timedelta(days=7)
+            meta_desc = html.escape(f"{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}.", quote=True)
             return f"""
 <!DOCTYPE html>
 <html>
@@ -507,7 +509,7 @@ def show_round(num):
     <title>cg #{num}/1</title>
     {META}
     <meta content="code guessing #{num}/1" property="og:title">
-    <meta content="{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}." property="og:description">
+    <meta content="{meta_desc}" property="og:description">
     <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
   </head>
   <body>
