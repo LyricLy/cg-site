@@ -41,4 +41,4 @@ I suggest a tool like `sqlitebrowser`.
 - `python finished.py` shows a list of players during stage 2, indicating which of them has pressed the button to finish guessing.
 - `python reshuffle.py` reassigns position numbers after a submission has been removed.
   For example, if there are 3 entries and entry #2 is removed, running `reshuffle.py` will fill in its place by changing entry #3 to entry #2.
-- `python end.py` ends a round, clears temporary personas, makes a backup of `the.db` called `once.db`, and copies a version of the database to `static/the.db` to be served publicly.
+- `python end.py` ends a round, clears temporary personas, makes a backup of `the.db` in the `backups` directory, and copies a version of the database to `static/the.db` to be served publicly.
