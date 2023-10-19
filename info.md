@@ -7,7 +7,7 @@ __Players write code to confuse each other, then try to guess which person wrote
 Each round has a writing phase, a guessing phase, and, eventually, a winner!
 
 ### Writing Phase
-A problem gets written up on the [website](https://cg.esolangs.gay), and announced in the `#event-discussion` channel on Discord. Usually it's something simple like "sort a list". There'll also be a list of programming languages you can choose, and an API for how your submission should take input and output.
+A problem gets written up on the [website](https://cg.esolangs.gay), and announced in the `#event-discussion` channel on Discord. Usually it's something simple like "sort a list". The programming languages you're allowed to use will be specified, along with an outline of the interface your program has to follow.
 
 __If you feel like participating, write a program that solves the problem.__
 Submit it to the site by signing in and uploading the file.
@@ -35,7 +35,7 @@ Wait for the Prime Minister of the United Kingdom to write a tweet, with text in
 I recommend you make friends in high places if you'd like to influence the result of the tiebreaker.
 
 ### Likes
-During the guessing phase, you can also click the tickbox next to a name to vote that you like that entry. You can like as many entries as you, well, like. At the end, the game will add up how many likes each entry got. That's like, separate to your score from guessing though. There's no prize but pride.
+During the guessing phase, you can click the "like" button on an entry to show that you like it. You can like as many entries as you, well, like. At the end, the game will add up how many likes each entry got. That's like, separate to your score from guessing though. There's no prize but pride.
 
 ## Plagiarism
 Although it's not very interesting, taking code from third-party sources is usually allowed. However, there is an exception to this. There are 3 criteria for code to count as illegally plagiarised:
@@ -64,7 +64,7 @@ You might have realised: the best way to not get guessed, is to write boring cod
 The majority of entries are interesting instead — as interesting as their creator can make it without making it obvious who wrote the code. __People tend to use the competition as a way to show off their cool tricks.__ You'll see golfed code that tries to minimise the amount of characters in the program, outlandishly convoluted ways of doing a simple task, short stories, highly-optimised performant solutions, and more. If you like weird, overengineered code, you'll enjoy reading through [previous rounds](https://cg.esolangs.gay/index/).
 
 ### Fun tasks
-If you win! and get to pick a new challenge, the best-loved ones are usually very simple. It's never supposed to be difficult to solve the task, because the fun of the game is in writing a program that expresses your individuality without seeming like it expresses your individuality. It's also recommended that your challenges have a language option for everyone who wants to join. Often, you would allow Python and C, Rust or JavaScript if you like them, and another weird language that tickles your fancy.
+If you win! and get to pick a new challenge, the best-loved ones are usually very simple. It's never supposed to be difficult to solve the task, because the fun of the game is in writing a program that expresses your individuality without seeming like it expresses your individuality. Challenges usually allow any language, but you can restrict the selection as long as you include Python and a few other common languages.
 
 ### Who's who?
 Most of the chatter around the round is in the `#event-discussion` channel. If you're new, don't worry, we don't bite.
