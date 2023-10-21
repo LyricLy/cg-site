@@ -639,12 +639,14 @@ def take(num):
     rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
     if not rnd:
         flask.abort(404)
+    if not discord.authorized:
+        flask.abort(403)
     user = discord.fetch_user()
-    form = flask.request.form
     if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, name_of_user(user)))
     anchor = None
+    form = flask.request.form
     try:
         match (form["type"], rnd["stage"]):
             case ("upload", 1):
