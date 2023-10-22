@@ -64,7 +64,7 @@ table {
     border-collapse: collapse;
 }
 
-table.sortable :is(th, td) {
+table:not(.highlighttable) :is(th, td) {
     border: 1px solid;
     padding: 4px;
 }
