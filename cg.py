@@ -24,7 +24,6 @@ import requests
 import flask
 import flask_discord
 import yarl
-from flask_discord import requires_authorization as auth
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
 from pygments.lexers.special import TextLexer
@@ -633,7 +632,6 @@ def guess_language(filename, content):
     return guess
 
 @app.route("/<int:num>/", methods=["POST"])
-@auth
 def take(num):
     db = get_db()
     rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
