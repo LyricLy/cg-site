@@ -414,7 +414,7 @@ LANGUAGES = [
     "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "rb", "zig", "cpp", "go", "java", "kotlin", "groovy",
     "d", "swift", "pl", "scm", "raku", "apl", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
     "nim", "nb", "forth", "factor", "elm", "vim", "sed", "nix", "sh", "matlab",
-    "md", "html", "css", "xml", "yaml", "json", "befunge", "image", "text", None
+    "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
 ]
 META = """
 <link rel="icon" type="image/png" href="/favicon.png">
