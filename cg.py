@@ -42,7 +42,9 @@ app.config |= {
     "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
 }
 discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url)
-markdown = mistune.create_markdown(plugins=["strikethrough", "table", "footnotes"])
+plugins = ["strikethrough", "table", "footnotes"]
+markdown = mistune.create_markdown(plugins=plugins)
+markdown_html = mistune.create_markdown(escape=False, plugins=plugins)
 formatter = HtmlFormatter(linenos=True)
 style = formatter.get_style_defs(".code")
 
@@ -434,7 +436,7 @@ def score_round(num):
     return get_db().execute("SELECT rank, player_id, total, plus, bonus, minus, won FROM Scores WHERE round_num = ? ORDER BY rank", (num,))
 
 def show_spec(db, rnd):
-    return f"<h2>specification</h2>{markdown(rnd['spec'])}"
+    return f"<h2>specification</h2>{markdown_html(rnd['spec'])}"
 
 HELL_QUERY = """
 WITH other_submissions AS (
