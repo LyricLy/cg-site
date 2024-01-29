@@ -73,7 +73,12 @@ function isOnPlayerNumber(event) {
 }
 
 function setPlayerCursor(event) {
-    event.target.style.cursor = isOnPlayerNumber(event) ? "pointer" : "auto";
+    const s = event.target.style;
+    if (s.cursor == "pointer" && !isOnPlayerNumber(event)) {
+        s.cursor = null;
+    } else if (isOnPlayerNumber(event)) {
+        s.cursor = "pointer";
+    }
 }
 
 function clickPlayer(event) {

@@ -548,7 +548,7 @@ def show_round(num):
                         panel += f'<li data-id="me" class="player you locked" {events}>{name} (you!)</li>'
                     else:
                         lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
-                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}" {events}>{name} {lock_button}</li>'
+                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}" {events}><a href="/stats/{name}">{name}</a> {lock_button}</li>'
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'
