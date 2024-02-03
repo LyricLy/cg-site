@@ -643,6 +643,7 @@ def take(num):
         flask.abort(403)
     user = discord.fetch_user()
     if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
+        logging.info(f"{user.id} not on server, forbidding")
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, name_of_user(user)))
     anchor = None
