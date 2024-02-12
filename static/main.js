@@ -150,7 +150,7 @@ if (players !== null) {
     const entries = document.getElementsByClassName("entry");
 
     document.addEventListener("keydown", (event) => {
-        if (event.key === 'h') {
+        if (event.key === 'h' && event.target === document.body) {
             localStorage.setItem("hideLocked", +!+localStorage.getItem("hideLocked"));
             hideLocked()
         }
