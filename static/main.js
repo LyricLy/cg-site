@@ -43,7 +43,7 @@ function send(form) {
 
 const players = document.getElementById("players");
 let sortable;
-if (players != null) {
+if (players !== null) {
     sortable = new Sortable(players, {
         swap: true,
         swapClass: "highlight",
@@ -74,7 +74,7 @@ function isOnPlayerNumber(event) {
 
 function setPlayerCursor(event) {
     const s = event.target.style;
-    if (s.cursor == "pointer" && !isOnPlayerNumber(event)) {
+    if (s.cursor === "pointer" && !isOnPlayerNumber(event)) {
         s.cursor = null;
     } else if (isOnPlayerNumber(event)) {
         s.cursor = "pointer";
@@ -146,8 +146,36 @@ function finish() {
     sendFinish();
 }
 
+if (players !== null) {
+    const entries = document.getElementsByClassName("entry");
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === 'h') {
+            localStorage.setItem("hideLocked", +!+localStorage.getItem("hideLocked"));
+            hideLocked()
+        }
+    });
+
+    function hideLocked() {
+        document.getElementById("temp")?.remove();
+        let numHidden = 0;
+        for (let i = 0; i < entries.length; i++) {
+            const isHidden = !!+localStorage.getItem("hideLocked") && players.children[i].classList.contains("locked");
+            numHidden += isHidden;
+            if (isHidden !== entries[i].classList.contains("hidden")) entries[i].classList.toggle("hidden");
+        }
+        if (numHidden) {
+            const amount = numHidden !== 1 ? numHidden + " entries are" : "1 entry is";
+            entries[entries.length-1].insertAdjacentHTML("afterend", '<p id="temp">' + amount + " hidden because you have locked in guesses for them. press <kbd>h</kbd> to reveal them.</p>")
+        }
+    }
+
+    hideLocked();
+}
+
 function lock(elem) {
     elem.parentElement.classList.toggle("locked");
+    hideLocked();
     sortable.option("onSort")();
 }
 
@@ -174,7 +202,7 @@ function resize(element) {
 }
 
 function considerSubmit(event) {
-    if (event.which == 13 && !event.shiftKey) {
+    if (event.which === 13 && !event.shiftKey) {
         event.preventDefault();
         event.target.form.submit();
     }

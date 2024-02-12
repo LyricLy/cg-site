@@ -154,6 +154,10 @@ input[type="number"] {
    background-color: #ffa;
 }
 
+.hidden {
+    display: none;
+}
+
 .comments {
     background-color: #fbfaf9;
     padding: 0.5em 1em;
