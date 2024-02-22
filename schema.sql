@@ -8,7 +8,7 @@ CREATE TABLE Rounds (
     stage INTEGER NOT NULL,
     spec TEXT NOT NULL,
     started_at TIMESTAMP NOT NULL,
-    stage2_at TIMESTAMP,
+    stage2_at TIMESTAMP NOT NULL,
     ended_at TIMESTAMP
 );
 

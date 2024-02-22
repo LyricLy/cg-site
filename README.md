@@ -42,3 +42,4 @@ I suggest a tool like `sqlitebrowser`.
 - `python reshuffle.py` reassigns position numbers after a submission has been removed.
   For example, if there are 3 entries and entry #2 is removed, running `reshuffle.py` will fill in its place by changing entry #3 to entry #2.
 - `python end.py` ends a round, clears temporary personas, makes a backup of `the.db` in the `backups` directory, and copies a version of the database to `static/the.db` to be served publicly.
+- `python finish.py 1d` extends the deadline for a round in stage 1 or stage 2. The argument is a time delta in either hours (`72h`) or days (`1d`).

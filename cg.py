@@ -502,7 +502,7 @@ def show_round(num):
                 panel = LOGIN_BUTTON
             entry_count, = db.execute("SELECT COUNT(*) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
             entries = f"<strong>{entry_count}</strong> entries have been received so far." if entry_count != 1 else "<strong>1</strong> entry has been received so far."
-            submit_by = rnd['stage2_at'] or rnd['started_at']+datetime.timedelta(days=7)
+            submit_by = rnd['stage2_at']
             meta_desc = html.escape(f"{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}.", quote=True)
             return f"""
 <!DOCTYPE html>
@@ -561,7 +561,7 @@ def show_round(num):
                     panel += LOGIN_BUTTON
                 else:
                     panel += "<p>you weren't a part of this round. come back next time?</p>"
-            guess_by = rnd['ended_at'] or rnd['stage2_at']+datetime.timedelta(days=4)
+            guess_by = rnd['ended_at']
             return f"""
 <!DOCTYPE html>
 <html>
