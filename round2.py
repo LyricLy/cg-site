@@ -9,7 +9,7 @@ db = sqlite3.connect("the.db")
 db.row_factory = sqlite3.Row
 num, = db.execute("SELECT MIN(num) FROM Rounds WHERE stage = 1")
 now = datetime.datetime.now(datetime.timezone.utc)
-db.execute("UPDATE Rounds SET stage = 2, stage2_at = ?, ended_at = ?, WHERE num = ?", (now, now+datetime.timedelta(days=4), *num))
+db.execute("UPDATE Rounds SET stage = 2, stage2_at = ?, ended_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=4), *num))
 subs = db.execute("SELECT * FROM Submissions WHERE round_num = ?", num).fetchall()
 random.shuffle(subs)
 for idx, sub in enumerate(subs, start=1):
