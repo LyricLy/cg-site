@@ -436,7 +436,7 @@ LOGIN_BUTTON = '<form method="get" action="/login"><input type="submit" value="l
 def score_round(num):
     return get_db().execute("SELECT rank, player_id, total, plus, bonus, minus, won FROM Scores WHERE round_num = ? ORDER BY rank", (num,))
 
-def show_spec(db, rnd):
+def show_spec(rnd):
     return f"<h2>specification</h2>{markdown_html(rnd['spec'])}"
 
 HELL_QUERY = """
@@ -518,7 +518,7 @@ def show_round(num):
     {top}
     <h1>code guessing, round #{num}, stage 1 (writing)</h1>
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
-    {show_spec(db, rnd)}
+    {show_spec(rnd)}
     <h2>entries</h2>
     <p>{entries}</p>
     <h2>submit</h2>
@@ -577,7 +577,7 @@ def show_round(num):
     {top}
     <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
-    {show_spec(db, rnd)}
+    {show_spec(rnd)}
     {panel}
     {entries}
   </body>
@@ -615,7 +615,7 @@ def show_round(num):
     {top}
     <h1>code guessing, round #{num} (completed)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 at {format_time(rnd['stage2_at'])}; ended at {format_time(rnd['ended_at'])}</p>
-    {show_spec(db, rnd)}
+    {show_spec(rnd)}
     <h2>results</h2>
     {results}
     {entries}
