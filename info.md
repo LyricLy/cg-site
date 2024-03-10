@@ -32,7 +32,7 @@ If there's a tie for the winner! of the round, it's usually broken based on the 
 
 You take the sha256 hash of the round number (in base-10, in ASCII), and use the result as a (big-endian) number to index into the (numerically) sorted list of all Discord IDs who tied for the top score in the round. (The lowest ID is at index 0, and the index is modulo the length of the list.) Whoever is selected, wins!
 
-I recommend you make friends in high places if you'd like to influence the result of the tiebreaker.
+To ensure victory, we recommend you pay off other players to throw the game. You cannot influence the result of the tiebreaker.
 
 ### Likes
 During the guessing phase, you can click the "like" button on an entry to show that you like it. You can like as many entries as you, well, like. At the end, the game will add up how many likes each entry got. That's like, separate to your score from guessing though. There's no prize but pride.
