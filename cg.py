@@ -415,7 +415,7 @@ def rank_enumerate(xs, *, key):
 
 LANGUAGES = [
     "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "rb", "zig", "cpp", "go", "java", "kotlin", "groovy",
-    "d", "swift", "pl", "scm", "raku", "apl", "bqn", "j", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
+    "d", "swift", "pl", "scm", "raku", "apl", "bqn", "j", "k", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
     "nim", "nb", "forth", "factor", "elm", "vim", "sed", "nix", "tal", "sh", "matlab",
     "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
 ]
