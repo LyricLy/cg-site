@@ -1,5 +1,3 @@
-import ctypes
-import functools
 import sys
 import sqlite3
 import datetime
@@ -9,7 +7,6 @@ import re
 import html
 import tarfile
 import zipfile
-import os
 import json
 import logging
 from collections import defaultdict
