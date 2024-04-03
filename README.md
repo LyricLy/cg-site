@@ -12,7 +12,7 @@ A Flask site to manage the code guessing event in Esolangs.
         - Add a redirect in `OAuth2 -> General` of the form `https://my.site/callback` and set `cb_url` to the same URL
     - Set `log_file` to a filename
     - (Optional) Set `canon_url` to the URL to your Canon server (see below)
-    - Set `admin_id` to your Discord ID
+    - Add the IDs of people allowed to moderate comments to `admin_ids`
 - Create a SQLite database called `the.db` and run `schema.sql` in it
 - Serve the WSGI application `cg:app` with `gunicorn` or similar
 
@@ -27,7 +27,7 @@ To run Canon, clone the repository, copy `config_stub.py` to `config.py` and fil
 - Set `log_file` to a filename
 - Set `token` to a Discord bot token. Without doing this, anonymous personas will still work, but notifications and filtering to server members will not
 - Set `guild_id` to the ID of the Discord server being played on (only if `token` is set)
-- Add the IDs of people allowed to moderate comments to `admin_ids` (only if `token` is set)
+- Set `admin_id` to your ID (only if `token` is set)
 
 It is a Flask application just like `cg-site`, and can be run in the same way. **Do not** expose the server to the Internet! It should only be accessible from the machine that `cg-site` is running on.
 Once Canon is running, be sure to set `canon_url` in `cg-site`'s config to the URL it is exposed under, without a trailing slash.
