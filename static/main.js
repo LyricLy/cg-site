@@ -165,8 +165,9 @@ if (players !== null) {
             if (isHidden !== entries[i].classList.contains("hidden")) entries[i].classList.toggle("hidden");
         }
         if (numHidden) {
-            const amount = numHidden !== 1 ? numHidden + " entries are" : "1 entry is";
-            entries[entries.length-1].insertAdjacentHTML("afterend", '<p id="temp">' + amount + " hidden because you have locked in guesses for them. press <kbd>h</kbd> to reveal them.</p>")
+            const message = numHidden !== 1 ? `${numHidden} entries are hidden because you have locked in guesses for them. press <kbd>h</kbd> to reveal them.`
+                : "your entry is hidden because you are hiding entries you have locked in guesses for. press <kbd>h</kbd> to reveal it.";
+            entries[entries.length-1].insertAdjacentHTML("afterend", `<p id="temp">${message}</p>`)
         }
     }
 
