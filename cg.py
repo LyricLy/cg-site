@@ -21,6 +21,7 @@ import requests
 import flask
 import flask_discord
 import yarl
+from oauthlib import oauth2
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
 from pygments.lexers.special import TextLexer
@@ -101,7 +102,7 @@ def index():
 
 @app.route("/<int:num>/<path:name>")
 def download_file(num, name):
-    user_id = discord.fetch_user().id if discord.authorized else None
+    user_id = fetch_user_id()
     f = get_db().execute("SELECT Files.content FROM Files INNER JOIN Rounds ON Rounds.num = Files.round_num "
                          "WHERE Files.round_num = ? AND Files.name = ? AND (Rounds.stage <> 1 OR Files.author_id = ?)", (num, name, user_id)).fetchone()
     if not f:
@@ -164,7 +165,7 @@ def info():
 """
 
 def make_tar(num, compression=""):
-    user_id = discord.fetch_user().id if discord.authorized else None
+    user_id = fetch_user_id()
     f = io.BytesIO()
     with tarfile.open(mode=f"w:{compression}", fileobj=f) as tar:
         for name, content, position in get_db().execute(
@@ -221,8 +222,20 @@ def persona_name(author, persona, d={}):
 def name_of_user(user):
     return user.to_json()["global_name"] or user.name
 
+def fetch_user():
+    if not discord.authorized:
+        return None
+    try:
+        return discord.fetch_user()
+    except oauth2.InvalidGrantError:
+        return None
+
+def fetch_user_id():
+    user = fetch_user()
+    return user.id if user else None
+
 def fetch_personas():
-    user = discord.fetch_user()
+    user = fetch_user()
     base_persona = {"id": -1, "name": name_of_user(user)}
     if not config.canon_url:
         return [base_persona]
@@ -250,8 +263,7 @@ def render_comments(db, num, parent, show_info):
             replied, their_persona = db.execute("SELECT author_id, persona FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
             extras.append(f'<a href="#c{r}"><em>replying to <strong>{persona_name(replied, their_persona)}</strong></em></a>')
         extras.append(f'<a href="#c{row["id"]}">¶</a>')
-        if discord.authorized:
-            user = discord.fetch_user()
+        if user := fetch_user():
             owns = row["author_id"] == user.id
             extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
             if owns:
@@ -261,10 +273,9 @@ def render_comments(db, num, parent, show_info):
         comments += ' ' + ' '.join(extras)
         comments += f'{markdown(row["content"])}</div><hr>'
     comments += "<h3>post a comment</h3>"
-    if not discord.authorized:
+    if not (user := fetch_user()):
         comments += f"<p>{LOGIN_BUTTON}</p>"
     else:
-        user = discord.fetch_user()
         comments += f'<form method="post" action="/{num}/" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">as <select name="persona">'
         for idx, persona in enumerate(fetch_personas()):
             comments += f'<option value="{persona["id"]}" {" selected"*(not idx)}>{persona["name"]}</option>'
@@ -380,7 +391,7 @@ def render_submission(db, row, show_info, written_by=True):
                 guess = f"<em>{guess}</em>"
             entries += f"<li>{guess} (by {get_name(guesser)})</li>"
         entries += "</ul></details>"
-    elif discord.authorized and db.execute("SELECT NULL FROM Submissions WHERE round_num = ? AND author_id = ?", (num, your_id := discord.fetch_user().id)).fetchone():
+    elif (your_id := fetch_user_id()) and db.execute("SELECT NULL FROM Submissions WHERE round_num = ? AND author_id = ?", (num, your_id)).fetchone():
         checked = " togglevalue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, your_id, author)).fetchone())
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
     entries += render_comments(db, num, author, show_info)
@@ -472,7 +483,7 @@ def show_round(num):
 
     match rnd["stage"]:
         case 1:
-            if discord.authorized:
+            if user_id := fetch_user_id():
                 panel = """
 <form method="post" enctype="multipart/form-data">
   <input type="hidden" name="type" value="upload">
@@ -483,8 +494,7 @@ def show_round(num):
   <input type="submit" value="submit">
 </form>
 """
-                user = discord.fetch_user()
-                files = render_files(db, num, user.id, lang_dropdowns=True)
+                files = render_files(db, num, user_id, lang_dropdowns=True)
                 if files:
                     panel += f"""
 <h2>review</h2>
@@ -526,8 +536,8 @@ def show_round(num):
 """
         case 2:
             entries = render_submissions(db, num, False)
-            your_id = discord.fetch_user().id if discord.authorized else None
-            if discord.authorized and (e := db.execute("SELECT position, finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()):
+            your_id = fetch_user_id()
+            if your_id and (e := db.execute("SELECT position, finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()):
                 your_pos, finished = e
                 panel = f'''
 <div id="guess-panel">
@@ -554,7 +564,7 @@ def show_round(num):
                 for name, in query:
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
-                if not discord.authorized:
+                if not your_id:
                     panel += LOGIN_BUTTON
                 else:
                     panel += "<p>you weren't a part of this round. come back next time?</p>"
@@ -637,9 +647,9 @@ def take(num):
     rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
     if not rnd:
         flask.abort(404)
-    if not discord.authorized:
+    user = fetch_user()
+    if not user:
         flask.abort(403)
-    user = discord.fetch_user()
     if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
         logging.info(f"{user.id} not on server, forbidding")
         flask.abort(403)
@@ -904,10 +914,9 @@ def user_stats(player):
 def canon_settings():
     if not config.canon_url:
         panel = "this page is not available"
-    elif not discord.authorized:
+    elif not (user := fetch_user_id()):
         panel = LOGIN_BUTTON
     else:
-        user = discord.fetch_user().id
         settings = requests.get(config.canon_url + f"/users/{user}/settings").json()
         personas = requests.get(config.canon_url + f"/users/{user}/personas").json()
         panel = '<form method="POST"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p>'
@@ -940,9 +949,9 @@ def canon_settings():
 
 @app.route("/anon", methods=["POST"])
 def change_settings():
-    if not discord.authorized:
+    user = fetch_user_id()
+    if not user:
         flask.abort(403)
-    user = discord.fetch_user().id
     requests.post(config.canon_url + f"/users/{user}/settings", json=flask.request.form.to_dict())
     if "add" in flask.request.form:
         r = requests.post(config.canon_url + f"/users/{user}/personas", json={"name": flask.request.form["name"]}).json()
