@@ -462,7 +462,11 @@ WITH other_submissions AS (
     FROM other_submissions INNER JOIN People ON id = author_id
     WHERE NOT EXISTS(SELECT 1 FROM our_guesses WHERE guess = author_id)
 )
-SELECT COALESCE(guess, author_id) as the_id, name, locked FROM guesses_wo_holes LEFT JOIN hole_fills ON idx1 = idx2 INNER JOIN People ON id = the_id
+SELECT COALESCE(guess, hole_fills.author_id) as the_id, name, locked, finished_guessing FROM
+    guesses_wo_holes
+    LEFT JOIN hole_fills ON idx1 = idx2
+    INNER JOIN People ON id = the_id
+    INNER JOIN Submissions ON round_num = ?1 AND Submissions.author_id = the_id
 """
 
 @app.route("/<int:num>/")
@@ -549,14 +553,14 @@ def show_round(num):
   </h2>
   <ol id="players">'''
                 query = db.execute(HELL_QUERY, (num, your_id)).fetchall()
-                query.insert(your_pos-1, (your_id, get_name(your_id), False))
-                for id, name, locked in query:
+                query.insert(your_pos-1, (your_id, get_name(your_id), None, None))
+                for id, name, locked, finished in query:
                     events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
                     if id == your_id:
-                        panel += f'<li data-id="me" class="player you locked" {events}>{name} (you!)</li>'
+                        panel += f'<li data-id="me" class="player you locked finished" {events}>{name} (you!)</li>'
                     else:
                         lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
-                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}" {events}><a style="color:unset" href="/stats/{name}">{name}</a> {lock_button}</li>'
+                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}{" finished"*finished}" {events}><a style="color:unset" href="/stats/{name}">{name}</a> {lock_button}</li>'
                 panel += "</ol></div>"
             else:
                 panel = '<h2>players</h2><ol>'

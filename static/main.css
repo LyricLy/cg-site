@@ -150,6 +150,16 @@ input[type="number"] {
     }
 }
 
+:has([alt="finish"]) + #players .finished::before {
+    content: "✔ ";
+    color: #68c23a;
+}
+
+:has([alt="finish"]) + #players .player:not(.finished)::before {
+    content: "✘ ";
+    color: #c2433a;
+}
+
 :target {
    background-color: #ffa;
 }
