@@ -810,7 +810,20 @@ def stats():
 
     bonus_col = before_round >= config.impersonation_since and after_round < config.impersonation_until
     like_col = before_round >= config.likes_since
-    cols = ["rank", "player", "tot", "+", "-", *["~"]*bonus_col, "in", "won", "tot/r", "+/r", "-/r", *["likes"]*like_col]
+    cols = [
+        ("rank", "current rank in the leaderboard"),
+        ("player", "discord username"),
+        ("tot", "total score"),
+        ("+", "points earned by guessing correctly"),
+        ("-", "points lost by being guessed"),
+        *[("~", "bonus points from impersonation")]*bonus_col,
+        ("in", "rounds played"),
+        ("won", "rounds won"),
+        ("tot/r", "average score per round"),
+        ("+/r", "average correct guesses per round"),
+        ("-/r", "average times guessed each round"),
+        *[("likes", "total likes")]*like_col,
+    ]
     rows = []
 
     e = list(rank_enumerate(lb.items(), key=lambda t: t[1][0]))
@@ -833,7 +846,7 @@ def stats():
             *[likes]*like_col,
         ])
 
-    table = build_table(cols, rows)
+    table = build_table([f'<span title="{y}">{x}</span>' for x, y in cols], rows)
     match [tuple(x[1]) for x in e if x[0] == 1]:
         case [(name, (total, *_))]:
             desc = f"{get_name(name)} leads with {total} points."
