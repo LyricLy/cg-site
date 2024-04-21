@@ -236,6 +236,8 @@ def fetch_user_id():
 
 def fetch_personas():
     user = fetch_user()
+    if not user:
+        return None
     base_persona = {"id": -1, "name": name_of_user(user)}
     if not config.canon_url:
         return [base_persona]
@@ -251,7 +253,7 @@ def pass_to_js(*args):
         s += ","
     return s
 
-def render_comments(db, num, parent, show_info):
+def render_comments(db, num, parent):
     rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
     comments = f'<details {"open"*bool(rows)}><summary><strong>comments</strong> {len(rows)}</summary><div class="comments">'
     for row in rows:
@@ -273,11 +275,11 @@ def render_comments(db, num, parent, show_info):
         comments += ' ' + ' '.join(extras)
         comments += f'{markdown(row["content"])}</div><hr>'
     comments += "<h3>post a comment</h3>"
-    if not (user := fetch_user()):
+    if not (personas := fetch_personas()):
         comments += f"<p>{LOGIN_BUTTON}</p>"
     else:
         comments += f'<form method="post" action="/{num}/" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">as <select name="persona">'
-        for idx, persona in enumerate(fetch_personas()):
+        for idx, persona in enumerate(personas):
             comments += f'<option value="{persona["id"]}" {" selected"*(not idx)}>{persona["name"]}</option>'
         comments += '</select><span class="extra"></span><p><textarea class="comment-content" name="content" oninput="resize(this)" onkeypress="considerSubmit(event)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
     comments += "</div></details>"
@@ -394,7 +396,7 @@ def render_submission(db, row, show_info, written_by=True):
     elif (your_id := fetch_user_id()) and db.execute("SELECT NULL FROM Submissions WHERE round_num = ? AND author_id = ?", (num, your_id)).fetchone():
         checked = " togglevalue"*bool(db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, your_id, author)).fetchone())
         entries += f'<p><button class="toggle" alt="unlike" ontoggle="onLike({position})"{checked}>like</button></p>'
-    entries += render_comments(db, num, author, show_info)
+    entries += render_comments(db, num, author)
     entries += "<br>"
     if not cached_display or not config.cache_display:
         cached_display = render_files(db, num, author)
@@ -703,13 +705,13 @@ def take(num):
                         requests.post(config.canon_url + "/round-over")
             case ("like", 2):
                 for pos in form.getlist("position"):
-                    id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(pos))).fetchone()
-                    checked = db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id)).fetchone()
+                    author_id, = db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, int(pos))).fetchone()
+                    checked = db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, author_id)).fetchone()
                     if checked:
-                        db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, id))
+                        db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, author_id))
                         logging.info(f"{user.id} unliked {id}")
                     else:
-                        db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, id))
+                        db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, author_id))
                         logging.info(f"{user.id} liked {id}")
             case ("comment", 2 | 3):
                 parent = int(form["parent"])
@@ -936,8 +938,7 @@ def canon_settings():
     else:
         settings = requests.get(config.canon_url + f"/users/{user}/settings").json()
         personas = requests.get(config.canon_url + f"/users/{user}/personas").json()
-        panel = '<form method="POST"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p>'
-        panel += f'<ul>'
+        panel = '<form method="POST"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p><ul>'
         for persona in personas:
             end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
             panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
