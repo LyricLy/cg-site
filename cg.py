@@ -164,16 +164,24 @@ def info():
 </html>
 """
 
+def external_url(lang):
+    if str(lang).startswith("external"):
+        return lang.removeprefix("external ")
+    return None
+
 def make_tar(num, compression=""):
     user_id = fetch_user_id()
     f = io.BytesIO()
     with tarfile.open(mode=f"w:{compression}", fileobj=f) as tar:
-        for name, content, position in get_db().execute(
-            "SELECT name, content, position FROM Files "
+        for name, content, position, lang in get_db().execute(
+            "SELECT name, content, position, lang FROM Files "
             "INNER JOIN Submissions ON Submissions.round_num = Files.round_num AND Submissions.author_id = Files.author_id "
             "INNER JOIN Rounds ON Rounds.num = Files.round_num "
             "WHERE Files.round_num = ? AND (stage <> 1 OR Files.author_id = ?)", (num, user_id)
         ):
+            print(name, lang)
+            if url := external_url(lang):
+                content = requests.get(url).content
             info = tarfile.TarInfo(f"{num}/{position}/{name}")
             info.size = len(content)
             tar.addfile(info, io.BytesIO(content))
@@ -301,8 +309,8 @@ def render_file(name, content, lang, url=None, dropdown_name=None):
     # remove appalling attempts at guessing language
     filetype = re.sub(r"^.+? (?:source|script(?: executable)?|program|document), |(?<=text) executable", "", filetype)
 
-    if str(lang).startswith("external") and url:
-        url = lang.removeprefix("external ")
+    if (ext := external_url(lang)) and url:
+        url = ext
         filetype = f"external link to {yarl.URL(url).host}"
         lang = None
 
