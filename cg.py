@@ -24,7 +24,6 @@ import yarl
 from oauthlib import oauth2
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
-from pygments.lexers.special import TextLexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
 
