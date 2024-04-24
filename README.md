@@ -8,6 +8,7 @@ A Flask site to manage the code guessing event in Esolangs.
 - Copy `config_stub.py` to `config.py` and fill it out:
     - Use some method such as `secrets.token_bytes` to generate random bytes for `secret_key`
     - Make an application in the [Discord Developer Portal](https://discord.com/developers/applications/)
+        - Copy the application ID for `app_id`
         - Copy the client secret for `client_secret`
         - Add a redirect in `OAuth2 -> General` of the form `https://my.site/callback` and set `cb_url` to the same URL
     - Set `log_file` to a filename

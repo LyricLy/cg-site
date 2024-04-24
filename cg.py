@@ -38,7 +38,7 @@ app.config |= {
     "SESSION_COOKIE_SECURE": True,
     "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
 }
-discord = flask_discord.DiscordOAuth2Session(app, 435756251205468160, config.client_secret, config.cb_url)
+discord = flask_discord.DiscordOAuth2Session(app, config.app_id, config.client_secret, config.cb_url)
 plugins = ["strikethrough", "table", "footnotes"]
 markdown = mistune.create_markdown(plugins=plugins)
 markdown_html = mistune.create_markdown(escape=False, plugins=plugins)

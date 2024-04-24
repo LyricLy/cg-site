@@ -1,7 +1,8 @@
 # Random sequence of bytes to encode cookies
 secret_key = b""
 
-# Discord client secret for OAuth2
+# Discord app ID and client secret for OAuth2
+app_id = 0
 client_secret = ""
 
 # Callback URL for OAuth2, should have path /callback
