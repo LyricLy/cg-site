@@ -18,7 +18,7 @@ CREATE TABLE Submissions (
     submitted_at TIMESTAMP,
     cached_display TEXT,
     position INTEGER,
-    persona INTEGER NOT NULL,
+    persona INTEGER,
     finished_guessing INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (author_id) REFERENCES People(id) ON UPDATE CASCADE,
     FOREIGN KEY (round_num) REFERENCES Rounds(num),
