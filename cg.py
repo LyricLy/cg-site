@@ -716,10 +716,10 @@ def take(num):
                     checked = db.execute("SELECT NULL FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, author_id)).fetchone()
                     if checked:
                         db.execute("DELETE FROM Likes WHERE round_num = ? AND player_id = ? AND liked = ?", (num, user.id, author_id))
-                        logging.info(f"{user.id} unliked {id}")
+                        logging.info(f"{user.id} unliked {author_id}")
                     else:
                         db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, author_id))
-                        logging.info(f"{user.id} liked {id}")
+                        logging.info(f"{user.id} liked {author_id}")
             case ("comment", 2 | 3):
                 parent = int(form["parent"])
                 persona = int(form["persona"])
