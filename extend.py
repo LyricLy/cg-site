@@ -1,6 +1,8 @@
 import datetime
-import sqlite3
 import sys
+
+from db import connect
+
 
 def parse_delta(s):
     count = int(s[:-1])
@@ -14,11 +16,7 @@ def parse_delta(s):
 
 t = parse_delta(sys.argv[1])
 
-def datetime_converter(value):
-    return datetime.datetime.fromisoformat(value.decode())
-sqlite3.register_converter("timestamp", datetime_converter)
-db = sqlite3.connect("the.db", detect_types=sqlite3.PARSE_DECLTYPES)
-db.row_factory = sqlite3.Row
+db = connect()
 
 num, stage, stage2_at, ended_at = db.execute("SELECT num, stage, stage2_at, ended_at FROM Rounds WHERE stage = 1 OR stage = 2").fetchone()
 if stage == 1:

@@ -1,8 +1,10 @@
-import sqlite3
 import datetime
 import sys
 
-db = sqlite3.connect("the.db")
+from db import connect
+
+
+db = connect()
 
 with open(sys.argv[1]) as f:
     spec = f.read()

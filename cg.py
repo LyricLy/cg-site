@@ -1,5 +1,4 @@
 import sys
-import sqlite3
 import datetime
 import io
 import itertools
@@ -28,6 +27,7 @@ from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
 
 import config
+from db import connect
 
 
 logging.basicConfig(filename=config.log_file, encoding="utf-8", format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", level=logging.INFO)
@@ -46,16 +46,11 @@ formatter = HtmlFormatter(linenos=True)
 style = formatter.get_style_defs(".code")
 
 
-def datetime_converter(value):
-    return datetime.datetime.fromisoformat(value.decode())
-sqlite3.register_converter("timestamp", datetime_converter)
 def get_db():
     try:
         return flask.g._db
     except AttributeError:
-        db = sqlite3.connect("the.db", detect_types=sqlite3.PARSE_DECLTYPES)
-        db.row_factory = sqlite3.Row
-        db.execute("PRAGMA foreign_keys = ON")
+        db = connect()
         flask.g._db = db
         return db
 

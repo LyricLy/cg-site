@@ -1,8 +1,7 @@
-import sqlite3
+from db import connect
 
 
-db = sqlite3.connect("the.db")
-db.row_factory = sqlite3.Row
+db = connect()
 num, = db.execute("SELECT MIN(num) FROM Rounds WHERE stage = 2")
 subs = db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", num).fetchall()
 db.execute("UPDATE Submissions SET position = NULL WHERE round_num = ?", num)
