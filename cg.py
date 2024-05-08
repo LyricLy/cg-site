@@ -325,7 +325,7 @@ def render_file(name, content, lang, url=None, dropdown_name=None):
         file += f'<details><summary>{header}</summary>'
         if lang.startswith("iframe"):
             u = lang.removeprefix("iframe ")
-            file += f'<iframe src="/files/{u}" width="1280" height="720"></iframe>'
+            file += f'<iframe src="/files/{u}" width="1280" height="720" sandbox="allow-downloads allow-forms allow-modals allow-pointer-lock allow-presentation allow-scripts"></iframe>'
         elif lang == "image":
             file += f'<img src="{url}">'
         elif lang == "pdf":
