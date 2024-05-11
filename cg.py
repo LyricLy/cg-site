@@ -255,8 +255,17 @@ def pass_to_js(*args):
         s += ","
     return s
 
-def render_comments(db, num, parent):
-    rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent)).fetchall()
+def submission_pos_to_id(num, pos):
+    db = get_db()
+    return db.execute("SELECT author_id FROM Submissions WHERE round_num = ? AND position = ?", (num, pos)).fetchone()[0]
+
+def submission_id_to_pos(num, author):
+    db = get_db()
+    return db.execute("SELECT position FROM Submissions WHERE round_num = ? AND author_id = ?", (num, author)).fetchone()[0]
+
+def render_comments(db, num, parent_id):
+    parent = submission_id_to_pos(num, parent_id)
+    rows = db.execute("SELECT * FROM Comments WHERE round_num = ? AND parent = ?", (num, parent_id)).fetchall()
     comments = f'<details {"open"*bool(rows)}><summary><strong>comments</strong> {len(rows)}</summary><div class="comments">'
     for row in rows:
         comments += f'<div id="c{row["id"]}" class="comment"><strong>{persona_name(row["author_id"], row["persona"])}</strong>'
@@ -264,14 +273,14 @@ def render_comments(db, num, parent):
             comments += f'<span class="tooltip">*<span class="tooltip-inner">known at the time as <strong>{persona_name(row["author_id"], row["og_persona"])}</strong></span></span>'
         extras = []
         if r := row["reply"]:
-            replied, their_persona = db.execute("SELECT author_id, persona FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent, r)).fetchone()
+            replied, their_persona = db.execute("SELECT author_id, persona FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent_id, r)).fetchone()
             extras.append(f'<a href="#c{r}"><em>replying to <strong>{persona_name(replied, their_persona)}</strong></em></a>')
         extras.append(f'<a href="#c{row["id"]}">¶</a>')
         if user := fetch_user():
             owns = row["author_id"] == user.id
-            extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(row["parent"]))})">reply</button>')
+            extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(parent))})">reply</button>')
             if owns:
-                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(row["parent"]), row["content"], row["persona"], row["reply"])})">edit</button>')
+                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(parent), row["content"], row["persona"], row["reply"])})">edit</button>')
             if owns or user.id in config.admin_ids:
                 extras.append(f'<form method="post" action="/{num}/" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
         comments += ' ' + ' '.join(extras)
@@ -716,7 +725,7 @@ def take(num):
                         db.execute("INSERT OR IGNORE INTO Likes VALUES (?, ?, ?)", (num, user.id, author_id))
                         logging.info(f"{user.id} liked {author_id}")
             case ("comment", 2 | 3):
-                parent = int(form["parent"])
+                parent = submission_pos_to_id(num, int(form["parent"]))
                 persona = int(form["persona"])
                 reply = int(form["reply"]) if "reply" in form else None
                 content = form["content"]
