@@ -184,9 +184,9 @@ def make_tar(num, compression=""):
 
 def list_archive(content):
     f = io.BytesIO(content)
-    if [bz3.test_file(f), f.seek(0)][0]:
+    if content.startswith(b"BZ3v1"):
         out = io.BytesIO()
-        bz3.decompress_file(f, out)
+        bz3.recover_file(f, out)
         out.seek(0)
         f = out
     try:
