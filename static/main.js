@@ -1,9 +1,9 @@
 function doUnit(s, ms, amount, unit) {
-    const u = Math.floor(ms / amount);
+    const u = ms % amount;
     if (u) {
         s.push(`${u} ${unit}${u > 1 ? "s" : ""}`);
     }
-    return ms % amount;
+    return Math.floor(ms / amount);
 }
 
 for (const elem of document.getElementsByTagName("time")) {
@@ -19,11 +19,12 @@ for (const elem of document.getElementsByTagName("time")) {
             return;
         }
         const s = [];
-        ms = doUnit(s, ms, 1000*60*60*24, "day");
-        ms = doUnit(s, ms, 1000*60*60, "hour");
-        ms = doUnit(s, ms, 1000*60, "minute");
-        ms = doUnit(s, ms, 1000, "second");
-        elem.innerHTML = `${date.toLocaleString()} (${s.join(", ")})`;
+        ms = Math.floor(ms / 1000);
+        ms = doUnit(s, ms, 60, "second");
+        ms = doUnit(s, ms, 60, "minute");
+        ms = doUnit(s, ms, 24, "hour");
+        ms = doUnit(s, ms, Infinity, "day");
+        elem.innerHTML = `${date.toLocaleString()} (${s.reverse().join(", ")})`;
     };
     f();
     setInterval(f, 1000);
