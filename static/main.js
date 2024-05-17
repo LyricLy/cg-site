@@ -13,17 +13,17 @@ for (const elem of document.getElementsByTagName("time")) {
         continue;
     }
     const f = () => {
-        let ms = date - new Date();
+        const ms = date - new Date();
         if (ms < 0) {
             elem.innerHTML = date.toLocaleString();
             return;
         }
         const s = [];
-        ms = Math.floor(ms / 1000);
-        ms = doUnit(s, ms, 60, "second");
-        ms = doUnit(s, ms, 60, "minute");
-        ms = doUnit(s, ms, 24, "hour");
-        ms = doUnit(s, ms, Infinity, "day");
+        const seconds = Math.floor(ms / 1000);
+        const minutes = doUnit(s, seconds, 60, "second");
+        const hours = doUnit(s, minutes, 60, "minute");
+        const days = doUnit(s, hours, 24, "hour");
+        doUnit(s, days, Infinity, "day");
         elem.innerHTML = `${date.toLocaleString()} (${s.reverse().join(", ")})`;
     };
     f();
