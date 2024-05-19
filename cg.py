@@ -458,6 +458,24 @@ def score_round(num):
     return get_db().execute("SELECT rank, player_id, total, plus, bonus, minus, won FROM Scores WHERE round_num = ? ORDER BY rank", (num,))
 
 def show_spec(rnd):
+    if rnd["num"] == 59:
+        user = fetch_user_id()
+        if not user:
+            return f"""<h2>specification?</h2>
+<p>hello! this cg round is slightly different. Indigo is going to get given <strong>4 bonus points</strong> without having to guess anyone at all!</p>
+
+<p>it's not without a catch, of course. the thing is, he isn't going to be given a whole <em>week</em> to write code like everybody else is.
+he only gets <strong>2 hours</strong>! worst of all, I'm not going to be telling him what the spec is.</p>
+
+<p>all the guessers will have to do is find a poorly written submission and it's a free guess! don't worry, though; he's not being left completely in the dark.
+he'll be able to view everyone else's submission as a reference <em>while</em> writing his own submission.</p>
+
+<p>anyway, all that means I need identification to show you the problem, since you might be Indigo in disguise!</p>
+
+{LOGIN_BUTTON}
+"""
+        if user == 609410502539608064:
+            return """<h2>no specification</h2><p>nuh-uh! nice try, Indigo.</p>"""
     return f"<h2>specification</h2>{markdown_html(rnd['spec'])}"
 
 HELL_QUERY = """
