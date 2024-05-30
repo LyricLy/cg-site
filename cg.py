@@ -519,7 +519,9 @@ def show_round(num):
     match rnd["stage"]:
         case 1:
             if user_id := fetch_user_id():
-                panel = """
+                if user_id == 609410502539608064:
+                    panel = """
+<p>good luck, Indigo!</p>
 <form method="post" enctype="multipart/form-data">
   <input type="hidden" name="type" value="upload">
   <label for="files">upload one or more files</label>
@@ -529,6 +531,8 @@ def show_round(num):
   <input type="submit" value="submit">
 </form>
 """
+                else:
+                    panel = "<p>sorry! the deadline has closed. stage 2 will start soon, pending Indigo's submission...</p>"
                 files = render_files(db, num, user_id, lang_dropdowns=True)
                 if files:
                     panel += f"""
@@ -694,6 +698,8 @@ def take(num):
     try:
         match (form["type"], rnd["stage"]):
             case ("upload", 1):
+                if user.id != 609410502539608064:
+                    flask.abort(403)
                 files = [x for x in flask.request.files.getlist("files") if x]
                 if not files:
                     return flask.flash("submit at least one file")
