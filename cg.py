@@ -611,7 +611,7 @@ def show_round(num):
             entries = render_submissions(db, num, True)
             results = "<ol>"
             for idx, author, total, plus, bonus, minus, won in score_round(num):
-                bonus_s = f" ~{bonus}"*(config.impersonation_since <= num < config.impersonation_until)
+                bonus_s = f" ~{bonus}"*(num in config.bonus_rounds)
                 crown = "👑 "*won
                 results += f'<li value="{idx}"><details><summary>{crown}<strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
                 for guess, actual, pos in db.execute(
@@ -793,7 +793,7 @@ SEASON_EVERY = 10
 @app.route("/stats/")
 def stats():
     db = get_db()
-    round_count, = db.execute("SELECT COUNT(*) FROM Rounds WHERE stage = 3").fetchone()
+    round_count, = db.execute("SELECT MAX(num) FROM Rounds WHERE stage = 3").fetchone()
     try:
         after_round = min(max(int(flask.request.args.get("after", ((round_count-1) // SEASON_EVERY * SEASON_EVERY) + 1)), 1), round_count)
         before_round = min(max(int(flask.request.args.get("before", round_count)), after_round), round_count)
@@ -825,7 +825,7 @@ def stats():
     for player, count in db.execute("SELECT liked, COUNT(*) FROM Likes WHERE round_num >= ? AND round_num <= ? GROUP BY liked", (after_round, before_round)):
         lb[player][-1] += count
 
-    bonus_col = before_round >= config.impersonation_since and after_round < config.impersonation_until
+    bonus_col = any(n in config.bonus_rounds for n in range(after_round, before_round+1))
     like_col = before_round >= config.likes_since
     cols = [
         ("rank", "current rank in the leaderboard"),
@@ -833,7 +833,7 @@ def stats():
         ("tot", "total score"),
         ("+", "points earned by guessing correctly"),
         ("-", "points lost by being guessed"),
-        *[("~", "bonus points from impersonation")]*bonus_col,
+        *[("~", "bonus points from special rules")]*bonus_col,
         ("in", "rounds played"),
         ("won", "rounds won"),
         ("tot/r", "average score per round"),

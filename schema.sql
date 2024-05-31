@@ -19,6 +19,7 @@ CREATE TABLE Submissions (
     cached_display TEXT,
     position INTEGER,
     persona INTEGER,
+    bonus_given INTEGER NOT NULL DEFAULT 0,
     finished_guessing INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (author_id) REFERENCES People(id) ON UPDATE CASCADE,
     FOREIGN KEY (round_num) REFERENCES Rounds(num),
@@ -108,6 +109,6 @@ FROM (SELECT
         SELECT COUNT(*) FROM Guesses
         INNER JOIN Targets ON Targets.round_num = Guesses.round_num AND Targets.player_id = actual
         WHERE actual = author_id AND guess = Targets.target AND Guesses.round_num = Submissions.round_num
-    ) AS bonus,
+    ) + bonus_given AS bonus,
     (SELECT COUNT(*) FROM Guesses WHERE guess = author_id AND guess = actual AND Guesses.round_num = Submissions.round_num) AS minus
 FROM Submissions) AS S);
