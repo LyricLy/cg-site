@@ -209,7 +209,8 @@ def download_round_bzip3(num):
     return flask.send_file(out, mimetype="application/octet-stream")
 
 def get_name(i):
-    return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
+    team = "🪨📄✂️"[i % 3]
+    return f'{team} {bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])}'
 
 def format_time(dt):
     return f'<time role="timer" datetime="{dt.isoformat()}">{dt.isoformat()}</time>'
