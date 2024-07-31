@@ -459,11 +459,7 @@ def score_round(num):
     return get_db().execute("SELECT rank, player_id, total, plus, bonus, minus, won FROM Scores WHERE round_num = ? ORDER BY rank", (num,))
 
 def show_spec(rnd):
-    t = f"<h2>specification</h2>{markdown_html(rnd['spec'])}"
-    if rnd['num'] == 61 and (user_id := fetch_user_id()):
-        team = ["Rock", "Paper", "Scissors"][user_id % 3]
-        t += f" by the way, according to your own ID, you are playing for <strong>{team}</strong>."
-    return t
+    return f"<h2>specification</h2>{markdown_html(rnd['spec'])}"
 
 HELL_QUERY = """
 WITH other_submissions AS (
