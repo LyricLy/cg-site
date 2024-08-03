@@ -567,8 +567,7 @@ def show_round(num):
   <ol id="players">'''
                 query = db.execute(HELL_QUERY, (num, your_id)).fetchall()
                 query.insert(your_pos-1, (your_id, get_name(your_id), None, None))
-                for id, _, locked, finished in query:
-                    name = get_name(id)
+                for id, name, locked, finished in query:
                     events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
                     if id == your_id:
                         panel += f'<li data-id="me" class="player you locked finished" {events}>{name} (you!)</li>'
