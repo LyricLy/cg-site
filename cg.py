@@ -36,6 +36,7 @@ app.config |= {
     "SESSION_COOKIE_HTTPONLY": False,
     "SESSION_COOKIE_SECURE": True,
     "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
+    "PERMANENT_SESSION_LIFETIME": datetime.timedelta(days=365 * 5),
 }
 discord = flask_discord.DiscordOAuth2Session(app, config.app_id, config.client_secret, config.cb_url)
 plugins = ["strikethrough", "table", "footnotes"]
@@ -982,6 +983,7 @@ def change_settings():
 
 @app.route("/callback")
 def callback():
+    flask.session.permanent = True
     discord.callback()
     return flask.redirect(flask.url_for("root"))
 
