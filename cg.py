@@ -71,8 +71,6 @@ def root():
 
 @app.route("/index/")
 def index():
-    print(discord.get_authorization_token())
-
     nums = get_db().execute("SELECT num, ended_at, spec, stage FROM Rounds ORDER BY num DESC").fetchall()
     last, at, _, stage = nums[0]
     rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({spec.split('**', 2)[1]})</li>" for n, _, spec, _ in nums)
@@ -194,7 +192,7 @@ def list_archive(content):
             with zipfile.ZipFile(f) as z:
                 return [(n, z.read(n)) for n in z.namelist() if not n.endswith("/")]
         except zipfile.BadZipFile:
-            return [("???", "cg: unable to read archive")]
+            return [("???", b"cg: unable to read archive")]
 
 @app.route("/<int:num>.tar.bz2")
 def download_round_bzip2(num):
