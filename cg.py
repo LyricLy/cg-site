@@ -12,7 +12,6 @@ from collections import defaultdict
 from pathlib import PurePosixPath
 
 import bleach
-import bz3
 import charset_normalizer
 import magic
 import mistune
@@ -72,6 +71,8 @@ def root():
 
 @app.route("/index/")
 def index():
+    print(discord.get_authorization_token())
+
     nums = get_db().execute("SELECT num, ended_at, spec, stage FROM Rounds ORDER BY num DESC").fetchall()
     last, at, _, stage = nums[0]
     rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({spec.split('**', 2)[1]})</li>" for n, _, spec, _ in nums)
@@ -184,29 +185,20 @@ def make_tar(num, compression=""):
 
 def list_archive(content):
     f = io.BytesIO(content)
-    if content.startswith(b"BZ3v1"):
-        out = io.BytesIO()
-        bz3.recover_file(f, out)
-        out.seek(0)
-        f = out
     try:
         with tarfile.open(fileobj=f, errorlevel=2) as tar:
             return [(n, g.read()) for n in tar.getnames() if (g := tar.extractfile(n))]
     except tarfile.TarError:
         f.seek(0)
-        with zipfile.ZipFile(f) as z:
-            return [(n, z.read(n)) for n in z.namelist() if not n.endswith("/")]
+        try:
+            with zipfile.ZipFile(f) as z:
+                return [(n, z.read(n)) for n in z.namelist() if not n.endswith("/")]
+        except zipfile.BadZipFile:
+            return [("???", "cg: unable to read archive")]
 
 @app.route("/<int:num>.tar.bz2")
 def download_round_bzip2(num):
     return flask.send_file(make_tar(num, "bz2"), mimetype="application/x-bzip2")
-
-@app.route("/<int:num>.tar.bz3")
-def download_round_bzip3(num):
-    out = io.BytesIO()
-    bz3.compress_file(make_tar(num), out, 1024*1024)
-    out.seek(0)
-    return flask.send_file(out, mimetype="application/octet-stream")
 
 def get_name(i):
     return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
