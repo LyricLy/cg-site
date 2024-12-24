@@ -1,13 +1,13 @@
 # What is code guessing?
 __Players write code to confuse each other, then try to guess which person wrote which bit of code.__
 
-[This link](https://cg.esolangs.gay) should take you to the latest round. Rounds take a couple weeks and are open to members of the [Esolangs Discord Server](https://discord.gg/3UXSK5p). You can learn about esoteric programming languages [here](https://esolangs.org).
+[This link](/) should take you to the latest round. Rounds take a couple weeks and are open to members of the [official Discord server](https://discord.gg/gUNZvN3k7p).
 
 ## Phases
 Each round has a writing phase, a guessing phase, and, eventually, a winner!
 
 ### Writing Phase
-A problem gets written up on the [website](https://cg.esolangs.gay), and announced in the `#event-discussion` channel on Discord. Usually it's something simple like "sort a list". The programming languages you're allowed to use will be specified, along with an outline of the interface your program has to follow.
+A problem gets written up on the [website](/), and announced in the `#event-discussion` channel on Discord. Usually it's something simple like "sort a list". The programming languages you're allowed to use will be specified, along with an outline of the interface your program has to follow.
 
 __If you feel like participating, write a program that solves the problem.__
 Submit it to the site by signing in and uploading the file.
@@ -40,7 +40,7 @@ During the guessing phase, you can click the "like" button on an entry to show t
 ## Plagiarism
 Although it's not very interesting, taking code from third-party sources is usually allowed. However, there is an exception to this. There are 3 criteria for code to count as illegally plagiarised:
 - The code was written after the challenge for the round was announced
-- The code was written by a member of Esolangs
+- The code was written by a member of the server
 - The author of the code is not the one who submitted it
 
 If your submission contains any code that meets all of these criteria, it is subject to disqualification.
@@ -48,9 +48,9 @@ If your submission contains any code that meets all of these criteria, it is sub
 ## Anonymity
 If you have a question or a comment, you might want to say it anonymously. We have a bot that can relay messages to people and channels, without displaying your real username.
 
-If you __message `@Esobot#0987` the command `!anon event-discussion`__, then your messages sent to the bot will be forwarded to the `#event-discussion` channel by Esobot. You can also put someone's username instead of `event-discussion` to speak to them privately. By default, you'll be assigned a random Toki Pona name like "jan Sasun" or "jan Papan", and the messages you send to Esobot will be stripped of all punctuation and converted to lowercase before they arrive. You can change name or turn off the message translation using the bot or by visiting this site's [anon settings page](/anon).
+If you __message `@Canon#8213` the command `!anon game-discussion`__, then your messages sent to the bot will be forwarded to the `#game-discussion` channel by Canon. You can also write someone's username to speak to them privately. By default, you'll be assigned a random Toki Pona name like "jan Sasun" or "jan Papan", and the messages you send to Canon will be stripped of all punctuation and converted to lowercase before they arrive. You can change name or turn off the message translation using the bot or by visiting this site's [anon settings page](/anon).
 
-Once you're done communicating anonymously, send `!anon stop` or `!anon leave` to Esobot. Your randomly generated name is usually reset between each round, but you have the option of switching to other names through the bot or site. Be warned that if you use the anonymity for mischief, the server admins do have the ability to unmask you.
+Once you're done communicating anonymously, send `!anon stop` or `!anon leave` to Canon. Your randomly generated name is usually reset between each round, but you have the option of switching to other names through the bot or site. Be warned that if you use the anonymity for mischief, the server admins do have the ability to unmask you.
 
 If you have a message you don't want stripped of punctuation/capitalisation, type a backslash `\` at the start of the message.
 
@@ -61,7 +61,7 @@ Those are the basics, but the bot has a few more features as well, which you can
 ### Fun entries
 You might have realised: the best way to not get guessed, is to write boring code with no clues in it. But __boring code is boring.__
 
-The majority of entries are interesting instead — as interesting as their creator can make it without making it obvious who wrote the code. __People tend to use the competition as a way to show off their cool tricks.__ You'll see golfed code that tries to minimise the amount of characters in the program, outlandishly convoluted ways of doing a simple task, short stories, highly-optimised performant solutions, and more. If you like weird, overengineered code, you'll enjoy reading through [previous rounds](https://cg.esolangs.gay/index/).
+The majority of entries are interesting instead — as interesting as their creator can make it without making it obvious who wrote the code. __People tend to use the competition as a way to show off their cool tricks.__ You'll see golfed code that tries to minimise the amount of characters in the program, outlandishly convoluted ways of doing a simple task, short stories, highly-optimised performant solutions, and more. If you like weird, overengineered code, you'll enjoy reading through [previous rounds](/index/).
 
 ### Fun tasks
 If you win! and get to pick a new challenge, the best-loved ones are usually very simple. It's never supposed to be difficult to solve the task, because the fun of the game is in writing a program that expresses your individuality without seeming like it expresses your individuality. Challenges usually allow any language, but you can restrict the selection as long as you include Python and a few other common languages.
@@ -69,4 +69,4 @@ If you win! and get to pick a new challenge, the best-loved ones are usually ver
 ### Who's who?
 Most of the chatter around the round is in the `#event-discussion` channel. If you're new, don't worry, we don't bite.
 
-You'll never know for sure who wrote which entry until the guessing phase is over, but if you look through past rounds you'll probably get some sense of what the regulars write. Check the [stats page](https://cg.esolangs.gay/stats) to sort by rounds played, or to skim all the entries someone has submitted.
+You'll never know for sure who wrote which entry until the guessing phase is over, but if you look through past rounds you'll probably get some sense of what the regulars write. Check the [stats page](/stats/) to sort by rounds played, or to skim all the entries someone has submitted.

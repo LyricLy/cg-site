@@ -1,6 +1,6 @@
 # cg-site
 
-A Flask site to manage the code guessing event in Esolangs.
+The official implementation of [code guessing](https://codeguessing.gay).
 
 ## Steps to host
 - Ensure Python 3.10 or higher is installed

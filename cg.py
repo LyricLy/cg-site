@@ -84,7 +84,7 @@ def index():
     <meta content="code guessing" property="og:title">
     <meta name="description" content="a game about writing code anonymously and guessing who wrote what.">
     <meta content="code and guess and such." property="og:description">
-    <meta content="https://cg.esolangs.gay/index/" property="og:url">
+    <meta content="https://codeguessing.gay/index/" property="og:url">
     <title>code guessing</title>
   </head>
   <body>
@@ -118,7 +118,7 @@ def credits():
     {META}
     <meta content="code guessing credits" property="og:title">
     <meta content="all the people that made this happen." property="og:description">
-    <meta content="https://cg.esolangs.gay/credits" property="og:url">
+    <meta content="https://codeguessing.gay/credits" property="og:url">
   </head>
   <body>
     <a href="/index/">index</a>
@@ -149,7 +149,7 @@ def info():
     {META}
     <meta content="code guessing info" property="og:title">
     <meta content="what is code guessing?" property="og:description">
-    <meta content="https://cg.esolangs.gay/info" property="og:url">
+    <meta content="https://codeguessing.gay/info" property="og:url">
   </head>
   <body>
     <a href="/index/">index</a>
@@ -436,8 +436,7 @@ META = """
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta content="website" property="og:type">
-<meta content="https://cg.esolangs.gay/favicon.png" property="og:image">
-<meta content="Esolangs" property="og:site_name">
+<meta content="https://codeguessing.gay/favicon.png" property="og:image">
 <script src="/main.js" defer></script>
 <script src="https://unpkg.com/konami@1.6.3/konami.js"></script>
 <link rel="stylesheet" href="/main.css">
@@ -527,7 +526,7 @@ def show_round(num):
     {META}
     <meta content="code guessing #{num}/1" property="og:title">
     <meta content="{meta_desc}" property="og:description">
-    <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
+    <meta content="https://codeguessing.gay/{num}/" property="og:url">
   </head>
   <body>
     {top}
@@ -585,7 +584,7 @@ def show_round(num):
     {META}
     <meta content="code guessing #{num}/2" property="og:title">
     <meta content="{len(query)} submissions received. guess by {guess_by.strftime('%B %d (%A)')}." property="og:description">
-    <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
+    <meta content="https://codeguessing.gay/{num}/" property="og:url">
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
   </head>
   <body>
@@ -623,7 +622,7 @@ def show_round(num):
     {META}
     <meta content="code guessing #{num}" property="og:title">
     <meta content="round concluded." property="og:description">
-    <meta content="https://cg.esolangs.gay/{num}/" property="og:url">
+    <meta content="https://codeguessing.gay/{num}/" property="og:url">
     <title>cg #{num}</title>
   </head>
   <body>
@@ -741,7 +740,7 @@ def take(num):
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
                     if config.canon_url:
-                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "content": content, "url": f"https://cg.esolangs.gay/{num}/#c{id}"})
+                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "content": content, "url": f"https://codeguessing.gay/{num}/#c{id}"})
             case ("delete-comment", 2 | 3):
                 id = form["id"]
                 owner, pos = db.execute(
@@ -867,7 +866,7 @@ def stats():
     {META}
     <meta content="code guessing stats" property="og:title">
     <meta content="{desc}" property="og:description">
-    <meta content="https://cg.esolangs.gay/stats/" property="og:url">
+    <meta content="https://codeguessing.gay/stats/" property="og:url">
     <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
     <title>cg stats</title>
   </head>
@@ -915,7 +914,7 @@ def user_stats(player):
     <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
     <meta content="{player}'s code guessing stats" property="og:title">
     <meta content="see their {sc} awesome entries" property="og:description">
-    <meta content="https://cg.esolangs.gay/stats/{player}" property="og:url">
+    <meta content="https://codeguessing.gay/stats/{player}" property="og:url">
     <title>cg - {player}</title>
   </head>
   <body>
@@ -954,14 +953,14 @@ def canon_settings():
   <head>
     {META}
     <meta content="anon settings" property="og:title">
-    <meta content="configure the behaviour of cg and esobot in regards to anonymous posts" property="og:description">
-    <meta content="https://cg.esolangs.gay/anon" property="og:url">
+    <meta content="configure the behaviour of cg and canon in regards to anonymous posts" property="og:description">
+    <meta content="https://codeguessing.gay/anon" property="og:url">
     <title>anon settings</title>
   </head>
   <body>
     <a href="/index/">index</a>
     <h1>anon settings</h2>
-    <p>here you can configure the system behind posting anonymously on cg and Esolangs.</p>
+    <p>here you can configure the system behind posting anonymously on this site and Discord.</p>
     {panel}
   </body>
 </html>
