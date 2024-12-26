@@ -131,6 +131,7 @@ def credits():
       <li>LyricLy - rule amendments, bot development, site development, and hosting round 6 and onwards</li>
       <li>RocketRace, olus2000, Palaiologos, razetime - ideas and advice</li>
       <li>IFcoltransG - writing the info page</li>
+      <li>Delapouite - creating the dice symbol used in the icon</li>
       <li>the players - designing the rounds and writing the submissions</li>
     </ul>
   </body>
