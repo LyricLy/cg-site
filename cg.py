@@ -261,7 +261,7 @@ def render_comments(db, num, parent_id):
     for row in rows:
         comments += f'<div id="c{row["id"]}" class="comment"><strong>{persona_name(row["author_id"], row["persona"])}</strong>'
         if row["og_persona"]:
-            comments += f'<span class="tooltip">*<span class="tooltip-inner">known at the time as <strong>{persona_name(row["author_id"], row["og_persona"])}</strong></span></span>'
+            comments += f'<span class="tooltip"><span class="tooltip-inner">known at the time as <strong>{persona_name(row["author_id"], row["og_persona"])}</strong></span></span>'
         extras = []
         if r := row["reply"]:
             replied, their_persona = db.execute("SELECT author_id, persona FROM Comments WHERE round_num = ? AND parent = ? AND id = ?", (num, parent_id, r)).fetchone()

@@ -1,3 +1,9 @@
+:root {
+    color-scheme: light dark;
+    --background: light-dark(#fff, #222);
+    --alt-background: light-dark(#fbfaf9, #1c1c1c);
+}
+
 html {
     padding-left: 30px;
     padding-right: 30px;
@@ -9,7 +15,8 @@ body {
     font-size: 18px;
     max-width: 1200px;
     margin: 30px auto;
-    color: #333;
+    background-color: var(--background);
+    color: light-dark(#333, #fbfbfb);
     tab-size: 4;
 }
 
@@ -22,7 +29,7 @@ p + ul {
 }
 
 pre:not(.highlight pre), :not(pre) > code {
-    background-color: #EEE;
+    background-color: light-dark(#eee, #393939);
     white-space: pre-wrap;
     overflow-wrap: break-word;
 }
@@ -51,7 +58,7 @@ a {
 
 th {
     background-clip: padding-box;
-    background-color: white;
+    background-color: var(--background);
     position: sticky;
     top: 0;
 }
@@ -88,7 +95,7 @@ input[type="number"] {
     float: right;
     top: 10px;
     padding: 8px;
-    background-color: white;
+    background-color: var(--background);
     position: sticky;
     margin-bottom: -10000px;
     margin-right: -20px;
@@ -114,15 +121,15 @@ input[type="number"] {
 [toggleValue=""] {
     border-radius: 10px;
     border-color: #ff5800;
-    background-color: white;
+    background-color: var(--background);
 }
 
 .highlight {
-    color: #F7A8B8;
+    color: #f7a8b8;
 }
 
 .player::marker {
-    color: blue;
+    color: LinkText;
 }
 
 .player {
@@ -131,7 +138,7 @@ input[type="number"] {
 }
 
 .locked {
-    background-color: #fbfaf9;
+    background-color: var(--alt-background);
 }
 
 .you {
@@ -161,7 +168,7 @@ input[type="number"] {
 }
 
 :target {
-   background-color: #ffa;
+   background-color: light-dark(#ffa, #4f4624);
 }
 
 .hidden {
@@ -169,7 +176,7 @@ input[type="number"] {
 }
 
 .comments {
-    background-color: #fbfaf9;
+    background-color: var(--alt-background);
     padding: 0.5em 1em;
     border-left: 2px solid #333;
 }
@@ -197,16 +204,18 @@ input[type="number"] {
     display: inline;
 }
 
-.tooltip {
-    color: #a83513;
+.tooltip::before {
+    visibility: visible;
+    content: "*";
+    font-size: 20px;
+    color: light-dark(#a83513, #fa431e);
     cursor: default;
 }
 
 .tooltip-inner {
     visibility: hidden;
-    background-color: #fbfaf9;
-    color: #333;
-    border: 1px solid #000;
+    background-color: var(--alt-background);
+    border: 1px solid light-dark(#000, #fff);
     text-align: center;
     cursor: auto;
     padding: 5px;
