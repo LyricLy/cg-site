@@ -432,7 +432,12 @@ LANGUAGES = [
     "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
 ]
 META = """
-<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/png" href="/meta/favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/svg+xml" href="/meta/favicon.svg">
+<link rel="shortcut icon" href="/meta/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/meta/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="cg">
+<link rel="manifest" href="/meta/site.webmanifest">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta content="website" property="og:type">
