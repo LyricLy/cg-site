@@ -75,7 +75,7 @@ def index():
     nums = get_db().execute("SELECT num, ended_at, spec, stage FROM Rounds ORDER BY num DESC").fetchall()
     last, at, _, stage = nums[0]
     rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({spec.split('**', 2)[1]})</li>" for n, _, spec, _ in nums)
-    rounds = "<ul>" + (f"<li>round {last+1} at {format_time(at+datetime.timedelta(days=3))}</li>" if stage == 3 else "") + rounds + "</ul>"
+    rounds = "<ul>" + (f"<li>round {last+1} at <strong>a new spot</strong></li>" if stage == 3 else "") + rounds + "</ul>"
     return f"""
 <!DOCTYPE html>
 <html>
