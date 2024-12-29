@@ -240,6 +240,11 @@ def fetch_personas():
     d = flask.g.d
     return d.get(user.id) or d.setdefault(user.id, [base_persona, *requests.get(config.canon_url + f"/users/{user.id}/personas").json()])
 
+def is_admin(user_id):
+    if config.admin_ids == "canon":
+        return requests.get(config.canon_url + f"/users/{user_id}").json()["is_admin"]
+    return user_id in config.admin_ids
+
 def pass_to_js(*args):
     s = ""
     for arg in args:
@@ -273,7 +278,7 @@ def render_comments(db, num, parent_id):
             extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(parent))})">reply</button>')
             if owns:
                 extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(parent), row["content"], row["persona"], row["reply"])})">edit</button>')
-            if owns or user.id in config.admin_ids:
+            if owns or is_admin(user.id):
                 extras.append(f'<form method="post" action="/{num}/" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
         comments += ' ' + ' '.join(extras)
         comments += f'{markdown(row["content"])}</div><hr>'
@@ -663,7 +668,7 @@ def take(num):
     user = fetch_user()
     if not user:
         flask.abort(403)
-    if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["result"]:
+    if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["can_play"]:
         logging.info(f"{user.id} not on server, forbidding")
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, name_of_user(user)))
@@ -753,7 +758,7 @@ def take(num):
                     "SELECT Comments.author_id, position FROM Comments INNER JOIN Submissions ON Submissions.round_num = Comments.round_num AND Submissions.author_id = parent WHERE id = ?",
                     (id,)
                 ).fetchone()
-                if user.id not in (owner, *config.admin_ids):
+                if user.id != owner and not is_admin(user.id):
                     flask.abort(403)
                 db.execute("DELETE FROM Comments WHERE id = ?", (id,))
                 anchor = str(pos)

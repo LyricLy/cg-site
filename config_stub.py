@@ -19,7 +19,8 @@ canon_url = ""
 cache_display = True
 
 # Discord IDs of admins
-# Currently only allows you to delete other people's comments
+# Gives access to the admin panel, and allows you to delete other people's comments
+# If set to "canon" and canon_url is set, Canon will be queried for the list of admins
 admin_ids = []
 
 # Which rounds to display certain figures for
