@@ -449,7 +449,6 @@ META = """
 <meta content="website" property="og:type">
 <meta content="https://codeguessing.gay/favicon.png" property="og:image">
 <script src="/main.js" defer></script>
-<script src="https://unpkg.com/konami@1.6.3/konami.js"></script>
 <link rel="stylesheet" href="/main.css">
 <link rel="stylesheet" href="/highlight.css">
 """

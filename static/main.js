@@ -130,10 +130,6 @@ function onLike(pos) {
     sender();
 }
 
-const download = document.getElementById("download");
-const egg = new Konami(() => { download.href = download.href.replace(/bz2/, "bz3"); });
-egg.pattern = "788965";
-
 let toggleFinish = false;
 const sendFinish = debounced(() => {
     if (!toggleFinish) return;
