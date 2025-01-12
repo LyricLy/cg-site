@@ -76,6 +76,7 @@ def index():
     last, at, _, stage = nums[0]
     rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({spec.split('**', 2)[1]})</li>" for n, _, spec, _ in nums)
     rounds = "<ul>" + (f"<li>round {last+1} at <strong>a new spot</strong></li>" if stage == 3 else "") + rounds + "</ul>"
+    logout = f' &bull; <a href="/logout">log out</a>'*bool(fetch_user())
     return f"""
 <!DOCTYPE html>
 <html>
@@ -88,7 +89,13 @@ def index():
     <title>code guessing</title>
   </head>
   <body>
-    <p><a href="/stats/">stats</a> &bull; <a href="/info">info</a> &bull; <a href="/credits">credits</a> &bull; <a href="/anon">anon settings</a></p>
+    <p>
+      <a href="/stats/">stats</a>
+      &bull; <a href="/info">info</a>
+      &bull; <a href="/credits">credits</a>
+      &bull; <a href="/anon">anon settings</a>
+      {f' &bull; <a href="/logout">log out</a>'*bool(fetch_user())}
+    </p>
     {rounds}
   </body>
 </html>
@@ -999,6 +1006,11 @@ def callback():
 @app.route("/login")
 def login():
     return discord.create_session(["identify"], data={"redirect": flask.request.referrer})
+
+@app.route("/logout")
+def logout():
+    discord.revoke()
+    return flask.redirect(flask.url_for("index"))
 
 @app.errorhandler(404)
 def not_found(e):
