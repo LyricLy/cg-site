@@ -993,12 +993,12 @@ def change_settings():
 @app.route("/callback")
 def callback():
     flask.session.permanent = True
-    discord.callback()
-    return flask.redirect(flask.url_for("root"))
+    r = discord.callback()
+    return flask.redirect(r["redirect"])
 
 @app.route("/login")
 def login():
-    return discord.create_session(["identify"])
+    return discord.create_session(["identify"], data={"redirect": flask.request.referrer})
 
 @app.errorhandler(404)
 def not_found(e):
