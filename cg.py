@@ -421,7 +421,8 @@ def render_submission(db, row, show_info, written_by=True):
     return entries
 
 def render_submissions(db, num, show_info):
-    entries = f'<h2>entries</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
+    hide_button = f'<button title="toggle showing locked entries while guessing" ontoggle="toggleHide()" id="hide-button" class="toggle" alt="🕶️🔒">👓🔒</button>'*(not show_info)
+    entries = f'<h2>entries {hide_button}</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<div class="entry"><h3 id="{position}" class="entry-header">entry #{position}</h3>'

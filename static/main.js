@@ -141,34 +141,34 @@ const sendFinish = debounced(() => {
 function finish() {
     toggleFinish = !toggleFinish;
     sendFinish();
+    hideLocked();
 }
 
-if (players !== null) {
-    const entries = document.getElementsByClassName("entry");
+const entries = document.getElementsByClassName("entry");
+const hideButton = document.getElementById("hide-button");
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key === 'h' && event.target === document.body) {
-            localStorage.setItem("hideLocked", +!+localStorage.getItem("hideLocked"));
-            hideLocked()
-        }
-    });
+if (+localStorage.getItem("hideLocked")) {
+    hideButton?.click();
+}
 
-    function hideLocked() {
-        document.getElementById("temp")?.remove();
-        let numHidden = 0;
-        for (let i = 0; i < entries.length; i++) {
-            const isHidden = !!+localStorage.getItem("hideLocked") && players.children[i].classList.contains("locked");
-            numHidden += isHidden;
-            if (isHidden !== entries[i].classList.contains("hidden")) entries[i].classList.toggle("hidden");
-        }
-        if (numHidden) {
-            const message = numHidden !== 1 ? `${numHidden} entries are hidden because you have locked in guesses for them. press <kbd>h</kbd> to reveal them.`
-                : "your entry is hidden because you are hiding entries you have locked in guesses for. press <kbd>h</kbd> to reveal it.";
-            entries[entries.length-1].insertAdjacentHTML("afterend", `<p id="temp">${message}</p>`)
-        }
-    }
-
+function toggleHide() {
+    localStorage.setItem("hideLocked", +hideButton.hasAttribute("togglevalue"));
     hideLocked();
+}
+
+function hideLocked() {
+    document.getElementById("temp")?.remove();
+    let numHidden = 0;
+    for (let i = 0; i < entries.length; i++) {
+        const isHidden = !!+localStorage.getItem("hideLocked") && !!document.querySelector(`[alt="unfinish"]`) && players.children[i].classList.contains("locked");
+        numHidden += isHidden;
+        if (isHidden !== entries[i].classList.contains("hidden")) entries[i].classList.toggle("hidden");
+    }
+    if (numHidden) {
+        const message = numHidden !== 1 ? `${numHidden} entries are hidden because you are hiding entries you have locked in guesses for.`
+            : "your entry is hidden because you are hiding entries you have locked in guesses for.";
+        entries[0].insertAdjacentHTML("beforebegin", `<p id="temp">${message}</p>`)
+    }
 }
 
 function lock(elem) {
