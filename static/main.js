@@ -137,6 +137,7 @@ const sendFinish = debounced(() => {
     const form = new FormData();
     form.append("type", "finish");
     send(form);
+    sortable.option("onSort")();
 })
 function finish() {
     toggleFinish = !toggleFinish;
