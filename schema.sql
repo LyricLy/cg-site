@@ -75,6 +75,7 @@ CREATE TABLE Comments (
     parent INTEGER NOT NULL,
     author_id INTEGER NOT NULL,
     content TEXT NOT NULL,
+    unchanged_content TEXT,
     posted_at TIMESTAMP NOT NULL,
     edited_at TIMESTAMP,
     reply INTEGER,

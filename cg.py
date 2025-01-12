@@ -284,7 +284,7 @@ def render_comments(db, num, parent_id):
             owns = row["author_id"] == user.id
             extras.append(f'<button onclick="reply({pass_to_js(str(row["id"]), str(parent))})">reply</button>')
             if owns:
-                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(parent), row["content"], row["persona"], row["reply"])})">edit</button>')
+                extras.append(f'<button onclick="edit({pass_to_js(str(row["id"]), str(parent), row["unchanged_content"] or row["content"], row["persona"], row["reply"])})">edit</button>')
             if owns or is_admin(user.id):
                 extras.append(f'<form method="post" action="/{num}/" class="delete-button"><input type="hidden" name="type" value="delete-comment"><input type="hidden" name="id" value="{row["id"]}"><input type="submit" value="delete"></form>')
         comments += ' ' + ' '.join(extras)
@@ -735,24 +735,29 @@ def take(num):
                 parent = submission_pos_to_id(num, int(form["parent"]))
                 persona = int(form["persona"])
                 reply = int(form["reply"]) if "reply" in form else None
+                unchanged_content = None
                 content = form["content"]
                 if persona != -1:
+                    unchanged_content = content
                     content = requests.post(config.canon_url + f"/users/{user.id}/transform", json={"text": content, "persona": persona}).json()["text"]
                 time = datetime.datetime.now(datetime.timezone.utc)
                 if edit := form.get("edit"):
                     owner, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (edit,)).fetchone()
                     if user.id != owner:
                         flask.abort(403)
-                    db.execute("UPDATE Comments SET content = ?, edited_at = ?, reply = ?, persona = ?, og_persona = IIF(og_persona IS NULL AND ?4 != persona, persona, og_persona) WHERE id = ?", (content, time, reply, persona, edit))
+                    db.execute(
+                        "UPDATE Comments SET content = ?, unchanged_content = ?, edited_at = ?, reply = ?, persona = ?, og_persona = IIF(og_persona IS NULL AND ?4 != persona, persona, og_persona) WHERE id = ?",
+                        (content, unchanged_content, time, reply, persona, edit),
+                    )
                     anchor = f"c{edit}"
-                    logging.info(f"{user.id} edited their comment {edit} (persona: {persona}, reply: {reply}): {content}")
+                    logging.info(f"{user.id} edited their comment {edit} (persona: {persona}, reply: {reply}): {unchanged_content} | {content}")
                 else:
                     id, = db.execute(
-                        "INSERT INTO Comments (round_num, parent, author_id, content, posted_at, reply, persona) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
-                        (num, parent, user.id, content, time, reply, persona)
+                        "INSERT INTO Comments (round_num, parent, author_id, content, unchanged_content, posted_at, reply, persona) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+                        (num, parent, user.id, content, unchanged_content, time, reply, persona),
                     ).fetchone()
                     anchor = f"c{id}"
-                    logging.info(f"{user.id} commented on {parent} (id: {id}, persona: {persona}, reply: {reply}): {content}")
+                    logging.info(f"{user.id} commented on {parent} (id: {id}, persona: {persona}, reply: {reply}): {unchanged_content} | {content}")
                     reply_author = None
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
