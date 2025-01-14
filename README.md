@@ -23,24 +23,14 @@ A running [Canon](https://github.com/LyricLy/Canon) server is required for the f
 - Getting notifications from comments
 - Blocking anyone not in a certain server from submitting entries
 - Sending you a notification when everyone has pressed the "finished" button during stage 2
+- Acting as a Discord bot providing the `!anon` and `!cg` commands
 
 To run Canon, clone the repository, copy `config_stub.py` to `config.py` and fill it out:
 - Set `log_file` to a filename
-- Set `token` to a Discord bot token. Without doing this, anonymous personas will still work, but notifications and filtering to server members will not
+- Set `token` to a Discord bot token (perhaps the one of the application made earlier). Without doing this, anonymous personas will still work, but Discord-specific features will not
 - Set `guild_id` to the ID of the Discord server being played on (only if `token` is set)
-- Set `admin_id` to your ID (only if `token` is set)
+- Add your ID to `admin_ids` or set it to a role ID (only if `token` is set)
+- Set `cg_url` to the canonical URL of your code guessing server
 
 It is a Flask application just like `cg-site`, and can be run in the same way. **Do not** expose the server to the Internet! It should only be accessible from the machine that `cg-site` is running on.
 Once Canon is running, be sure to set `canon_url` in `cg-site`'s config to the URL it is exposed under, without a trailing slash.
-
-## Scripts
-There are a variety of Python scripts included for managing the game state. Be aware that this interface is quite barebones, and you may have to manually edit the SQL database at times.
-I suggest a tool like `sqlitebrowser`.
-
-- `python start.py file` will read `file` as a Markdown specification and start a new round.
-- `python round2.py` will transition from stage 1 to stage 2.
-- `python finished.py` shows a list of players during stage 2, indicating which of them has pressed the button to finish guessing.
-- `python reshuffle.py` reassigns position numbers after a submission has been removed.
-  For example, if there are 3 entries and entry #2 is removed, running `reshuffle.py` will fill in its place by changing entry #3 to entry #2.
-- `python end.py` ends a round, clears temporary personas, makes a backup of `the.db` in the `backups` directory, and copies a version of the database to `static/the.db` to be served publicly.
-- `python finish.py 1d` extends the deadline for a round in stage 1 or stage 2. The argument is a time delta in either hours (`72h`) or days (`1d`).
