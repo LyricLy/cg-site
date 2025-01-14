@@ -195,6 +195,7 @@ input[type="number"] {
 
 .comment-content {
     height: 18px;
+    width: 100%;
     overflow: hidden;
     font-family: sans-serif;
     resize: none;
@@ -242,4 +243,16 @@ input[type="number"] {
     background-repeat: no-repeat;
     position: relative;
     bottom: -1px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+header > a {
+    flex-grow: 1;
+    flex-basis: 0;
+    text-align: center;
 }

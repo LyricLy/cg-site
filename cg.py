@@ -2,7 +2,11 @@ import sys
 import datetime
 import io
 import itertools
+import os
 import re
+import random
+import hashlib
+import shutil
 import html
 import tarfile
 import zipfile
@@ -64,19 +68,24 @@ def close_connection(exception):
 
 @app.route("/")
 def root():
-    cur = get_db().execute("SELECT MIN(num) FROM Rounds WHERE stage <> 3")
+    cur = get_db().execute("SELECT MIN(num) FROM Rounds WHERE stage AND stage <> 3")
     if r := cur.fetchone()[0]:
         return flask.redirect(flask.url_for("show_round", num=r))
     else:
         return flask.redirect(flask.url_for("index"))
 
+def get_title(spec):
+    l = spec.split("**", 2)
+    return l[1] if len(l) >= 3 else None
+
+def get_summary(spec):
+    l = spec.splitlines()
+    return l[0].replace("*", "") if l else None
+
 @app.route("/index/")
 def index():
-    nums = get_db().execute("SELECT num, ended_at, spec, stage FROM Rounds ORDER BY num DESC").fetchall()
-    last, at, _, stage = nums[0]
-    rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({spec.split('**', 2)[1]})</li>" for n, _, spec, _ in nums)
-    rounds = "<ul>" + (f"<li>round {last+1} at <strong>a new spot</strong></li>" if stage == 3 else "") + rounds + "</ul>"
-    logout = f' &bull; <a href="/logout">log out</a>'*bool(fetch_user())
+    nums = get_db().execute("SELECT num, started_at, spec, stage FROM Rounds ORDER BY num DESC").fetchall()
+    rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({get_title(spec)})</li>" if stage else f"<li>round #{n} at {format_time(start)}</li>" for n, start, spec, stage in nums)
     return f"""
 <!DOCTYPE html>
 <html>
@@ -94,9 +103,10 @@ def index():
       &bull; <a href="/info">info</a>
       &bull; <a href="/credits">credits</a>
       &bull; <a href="/anon">anon settings</a>
+      {f' &bull; <a href="/admin/">admin panel</a>'*is_admin(fetch_user_id())}
       {f' &bull; <a href="/logout">log out</a>'*bool(fetch_user())}
     </p>
-    {rounds}
+    <ul>{rounds}</ul>
   </body>
 </html>
 """
@@ -248,6 +258,8 @@ def fetch_personas():
     return d.get(user.id) or d.setdefault(user.id, [base_persona, *requests.get(config.canon_url + f"/users/{user.id}/personas").json()])
 
 def is_admin(user_id):
+    if not user_id:
+        return False
     if config.admin_ids == "canon":
         return requests.get(config.canon_url + f"/users/{user_id}").json()["is_admin"]
     return user_id in config.admin_ids
@@ -296,7 +308,7 @@ def render_comments(db, num, parent_id):
         comments += f'<form method="post" action="/{num}/" id="post-{parent}"><input type="hidden" name="type" value="comment"><input type="hidden" name="parent" value="{parent}">as <select name="persona">'
         for idx, persona in enumerate(personas):
             comments += f'<option value="{persona["id"]}" {" selected"*(not idx)}>{persona["name"]}</option>'
-        comments += '</select><span class="extra"></span><p><textarea class="comment-content" name="content" oninput="resize(this)" onkeypress="considerSubmit(event)" cols="80" autocomplete="off" maxlength="1000"></textarea> <input type="submit" value="Post"></p></form>'
+        comments += '</select><span class="extra"></span><p><textarea class="comment-content" name="content" onkeypress="considerSubmit(event)" autocomplete="off" maxlength="1000"></textarea></p></form>'
     comments += "</div></details>"
     return comments
 
@@ -307,11 +319,13 @@ def lang_display(lang):
         return "Image"
     if lang == "pdf":
         return "PDF"
+    if lang == "archive":
+        return "Archive"
     if lang.startswith("iframe"):
         return "Embedded page"
     return get_lexer_by_name(lang).name
 
-def render_file(name, content, lang, url=None, dropdown_name=None):
+def render_file(name, content, lang, url=None, dropdown_name=None, languages=None):
     filetype = magic.from_buffer(content)
     # remove appalling attempts at guessing language
     filetype = re.sub(r"^.+? (?:source|script(?: executable)?|program|document), |(?<=text) executable", "", filetype)
@@ -325,9 +339,9 @@ def render_file(name, content, lang, url=None, dropdown_name=None):
     name = bleach.clean(name)
     header_name = name if not url else f'<a href="{url}">{name}</a>'
     header = f'{header_name} <small><em>{filetype}</em></small>'
-    if dropdown_name:
+    if languages:
         header += f' <select name="{dropdown_name}">'
-        for language in LANGUAGES:
+        for language in languages:
             selected = " selected"*(language == lang)
             header += f'<option value="{language}"{selected}>{lang_display(language)}</option>'
         header += "</select>"
@@ -361,26 +375,26 @@ def render_file(name, content, lang, url=None, dropdown_name=None):
 def root_dir(r):
     return r[0].parts[0] if len(r[0].parts) > 1 else None
 
-def _render_file_contents(fs, url_stem, lang_dropdowns):
+def _render_file_contents(fs, url_stem, languages):
     out = ""
     fs.sort(key=lambda r: (not root_dir(r), r[0]))
     for dir_name, g in itertools.groupby(fs, root_dir):
         if dir_name:
             out += f'<details><summary>dir <strong>{dir_name}</strong></summary><div class="comments">'
             new_fs = [(path.relative_to(dir_name), *r) for path, *r in g]
-            out += _render_file_contents(new_fs, url_stem, lang_dropdowns)
+            out += _render_file_contents(new_fs, url_stem, languages)
             out += '</div></details>'
         else:
             for path, full_name, content, lang in g:
-                out += render_file(path.name, content, lang, url_stem + full_name if url_stem else None, full_name if lang_dropdowns else None)
+                out += render_file(path.name, content, lang, url_stem + full_name if url_stem else None, full_name, languages)
     return out
 
-def render_file_contents(fs, url_stem=None, lang_dropdowns=False):
-    return _render_file_contents([(PurePosixPath(name), name, *r) for name, *r in fs], url_stem, lang_dropdowns)
+def render_file_contents(fs, url_stem=None, languages=None):
+    return _render_file_contents([(PurePosixPath(name), name, *r) for name, *r in fs], url_stem, languages)
 
-def render_files(db, num, author, lang_dropdowns=False):
+def render_files(db, num, author, languages=None):
     fs = db.execute("SELECT name, content, lang FROM Files WHERE author_id = ? AND round_num = ?", (author, num)).fetchall()
-    return render_file_contents(fs, f"/{num}/", lang_dropdowns)
+    return render_file_contents(fs, f"/{num}/", languages)
 
 
 def render_submission(db, row, show_info, written_by=True):
@@ -425,7 +439,7 @@ def render_submissions(db, num, show_info):
     entries = f'<h2>entries {hide_button}</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
-        entries += f'<div class="entry"><h3 id="{position}" class="entry-header">entry #{position}</h3>'
+        entries += f'<div class="entry"><h3 id="{position}">entry #{position}</h3>'
         entries += render_submission(db, r, show_info)
         entries += "</div>"
     return entries
@@ -445,6 +459,7 @@ LANGUAGES = [
     "nim", "nb", "forth", "factor", "elm", "vim", "sed", "nix", "tal", "sh", "matlab", "prolog",
     "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
 ]
+ADMIN_LANGUAGES = [*LANGUAGES, "pdf", "archive"]
 META = """
 <link rel="icon" type="image/png" href="/meta/favicon-96x96.png" sizes="96x96">
 <link rel="icon" type="image/svg+xml" href="/meta/favicon.svg">
@@ -467,6 +482,12 @@ def score_round(num):
 
 def show_spec(rnd):
     return f"<h2>specification</h2>{markdown_html(rnd['spec'])}"
+
+def flash():
+    if m := flask.get_flashed_messages():
+        return m[0]
+    else:
+        return ""
 
 HELL_QUERY = """
 WITH other_submissions AS (
@@ -493,22 +514,25 @@ SELECT COALESCE(guess, hole_fills.author_id) as the_id, name, locked, finished_g
 @app.route("/<int:num>/")
 def show_round(num):
     db = get_db()
-    rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
+    rnd = db.execute("SELECT * FROM Rounds WHERE num = ? AND stage", (num,)).fetchone()
     if not rnd:
         flask.abort(404)
+    user_id = fetch_user_id()
 
     top_elems = []
     if num > 1:
         top_elems.append(f'<a href="/{num-1}/">prev</a>')
     top_elems.append('<a href="/index/">index</a>')
     top_elems.append('<a href="/info">info</a>')
-    if db.execute("SELECT * FROM Rounds WHERE num = ?", (num+1,)).fetchone():
+    if is_admin(user_id):
+        top_elems.append(f'<a href="/admin/{num}">admin panel</a>')
+    if db.execute("SELECT * FROM Rounds WHERE num = ? AND stage", (num+1,)).fetchone():
         top_elems.append(f'<a href="/{num+1}/">next</a>')
     top = " &bull; ".join(top_elems)
 
     match rnd["stage"]:
         case 1:
-            if user_id := fetch_user_id():
+            if user_id:
                 panel = """
 <form method="post" enctype="multipart/form-data">
   <input type="hidden" name="type" value="upload">
@@ -519,7 +543,7 @@ def show_round(num):
   <input type="submit" value="submit">
 </form>
 """
-                files = render_files(db, num, user_id, lang_dropdowns=True)
+                files = render_files(db, num, user_id, LANGUAGES)
                 if files:
                     panel += f"""
 <h2>review</h2>
@@ -535,7 +559,7 @@ def show_round(num):
             entry_count, = db.execute("SELECT COUNT(*) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
             entries = f"<strong>{entry_count}</strong> entries have been received so far." if entry_count != 1 else "<strong>1</strong> entry has been received so far."
             submit_by = rnd['stage2_at']
-            meta_desc = html.escape(f"{rnd['spec'].splitlines()[0].replace('*', '')} submit by {submit_by.strftime('%B %d (%A)')}.", quote=True)
+            meta_desc = html.escape(f"{get_summary(rnd['spec'])} submit by {submit_by.strftime('%B %d (%A)')}.", quote=True)
             return f"""
 <!DOCTYPE html>
 <html>
@@ -554,15 +578,14 @@ def show_round(num):
     <h2>entries</h2>
     <p>{entries}</p>
     <h2>submit</h2>
-    <p>{m[0] if (m := flask.get_flashed_messages()) else ""}</p>
+    <p>{flash()}</p>
     {panel}
   </body>
 </html>
 """
         case 2:
             entries = render_submissions(db, num, False)
-            your_id = fetch_user_id()
-            if your_id and (e := db.execute("SELECT position, finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (your_id, num)).fetchone()):
+            if user_id and (e := db.execute("SELECT position, finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (user_id, num)).fetchone()):
                 your_pos, finished = e
                 panel = f'''
 <div id="guess-panel">
@@ -573,11 +596,11 @@ def show_round(num):
     <button title="once all players have pressed this button, guessing can end early" class="toggle" ontoggle="finish(this)" alt="unfinish"{" togglevalue"*finished}>finish</button>
   </h2>
   <ol id="players">'''
-                query = db.execute(HELL_QUERY, (num, your_id)).fetchall()
-                query.insert(your_pos-1, (your_id, get_name(your_id), None, None))
+                query = db.execute(HELL_QUERY, (num, user_id)).fetchall()
+                query.insert(your_pos-1, (user_id, get_name(user_id), None, None))
                 for id, name, locked, finished in query:
                     events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
-                    if id == your_id:
+                    if id == user_id:
                         panel += f'<li data-id="me" class="player you locked finished" {events}>{name} (you!)</li>'
                     else:
                         lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
@@ -589,7 +612,7 @@ def show_round(num):
                 for name, in query:
                     panel += f'<li>{name}</li>'
                 panel += "</ol>"
-                if not your_id:
+                if not user_id:
                     panel += LOGIN_BUTTON
                 else:
                     panel += "<p>you weren't a part of this round. come back next time?</p>"
@@ -966,7 +989,7 @@ def canon_settings():
         for persona in personas:
             end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
             panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
-        panel += f'<li><input name="name" type="text" size="16"> <input type="submit" name="add" value="add"> {m[0] if (m := flask.get_flashed_messages()) else ""}</li></ul>'
+        panel += f'<li><input name="name" type="text" size="16"> <input type="submit" name="add" value="add"> {flash()}</li></ul>'
         for setting in settings:
             panel += f'<h3>{setting["display"].lower()} <input type="checkbox" name="{setting["name"]}"{" checked"*setting["value"]}></h3><p>{setting["blurb"].lower()}</p>'
         panel += '<input type="submit" value="save"></form>'
@@ -1002,6 +1025,181 @@ def change_settings():
     elif (d := next(iter(flask.request.form.keys()))).isdigit() and flask.request.form[d] == "delete":
         requests.delete(config.canon_url + f"/personas/{d}")
     return flask.redirect(flask.url_for("canon_settings"))
+
+@app.route("/admin/")
+def panel_root():
+    r, = get_db().execute("SELECT MAX(num) FROM Rounds").fetchone()
+    return flask.redirect(flask.url_for("panel", num=r))
+
+@app.route("/admin/<int:num>")
+def panel(num):
+    user_id = fetch_user_id()
+    if not is_admin(user_id):
+        flask.abort(401)
+
+    db = get_db()
+    rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
+    if not rnd:
+        flask.abort(404)
+
+    if timefield := ["started_at", "stage2_at", "ended_at", None][rnd["stage"]]:
+        extend = f'<input type="date" name="{timefield}" value="{rnd[timefield].strftime("%Y-%m-%d")}"> <input type="submit" value="extend/shorten deadline">'
+    else:
+        extend = ""
+
+    entries = ""
+    if rnd["stage"] > 1:
+        entries += '<h2>entries</h2>'
+        entries += flash()
+        for author, pos in db.execute("SELECT author_id, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
+            if rnd["stage"] == 2:
+                entries += f'<h3>#{pos} <input type="submit" name="nix-{pos}" value="disqualify"></h3>'
+            else:
+                entries += f'<h3>#{pos}</h3>'
+            entries += render_files(db, num, author, ADMIN_LANGUAGES)
+        entries += '<p><input type="submit" value="update languages"></p>'
+
+    return f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    {META}
+    <title>admin panel (#{num})</title>
+  </head>
+  <body>
+    <header>
+      {f'<a href="{num-1}">previous round</a>' if num > 1 else '<a></a>'}
+      <h1>{f'<a href="/{num}/">round #{num}</a>' if rnd["stage"] else f'round #{num}'}</h1>
+      {f'<a href="{num+1}">next round</a>' if rnd["stage"] == 3 else '<a></a>'}
+    </header>
+    <form method="post">
+      <details>
+        <summary>edit specification</summary>
+        <p>
+          {f"title (shown on /index/): {title}"
+          if (title := get_title(rnd["spec"])) else
+          "<strong>warning: specification should have a bolded section indicating the challenge in the first paragraph</strong>"}
+          <br>summary (shown in link embed): {get_summary(rnd["spec"])}
+        </p>
+        <textarea class="comment-content" name="spec" autocomplete="off">{rnd["spec"]}</textarea>
+        <input type="submit" value="save">
+      </details>
+      <p>{extend}</p>
+      <p>{" ".join(f'<input type="submit" name="action" value="{v}">' for v in [["start round"], ["move to stage 2", "unstart round"], ["end round"], []][rnd["stage"]])}</p>
+      {show_spec(rnd)}
+      {entries}
+    </form>
+  </body>
+</html>
+    """
+
+def backup(num):
+    os.makedirs("backups", exist_ok=True)
+    shutil.copy("the.db", f"backups/{num}.db")
+
+@app.route("/admin/<int:num>", methods=["POST"])
+def take_admin(num):
+    db = get_db()
+    rnd = db.execute("SELECT * FROM Rounds WHERE num = ?", (num,)).fetchone()
+    if not rnd:
+        flask.abort(404)
+    user_id = fetch_user_id()
+    if not is_admin(user_id):
+        flask.abort(403)
+    form = flask.request.form
+    try:
+        db.execute("UPDATE Rounds SET spec = ? WHERE num = ?", (form["spec"], num))
+        for key, value in form.items():
+            # the pain of being str()'d
+            if value == "None":
+                value = None 
+            if value not in ADMIN_LANGUAGES:
+                continue
+            db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
+
+        for timefield in "started_at", "stage2_at", "ended_at":
+            date = form.get(timefield)
+            if not date:
+                continue
+            new = datetime.datetime.combine(datetime.datetime.strptime(date, "%Y-%m-%d").date(), rnd[timefield].timetz())
+            db.execute(f"UPDATE Rounds SET {timefield} = ? WHERE num = ?", (new, num))
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        match (form.get("action"), rnd["stage"]):
+            case ("start round", 0):
+                db.execute("UPDATE Rounds SET stage = 1, started_at = ?, stage2_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=7), num))
+                logging.info(f"{user_id} started round {num}")
+            case ("move to stage 2", 1):
+                db.execute("UPDATE Rounds SET stage = 2, stage2_at = ?, ended_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=4), num))
+                subs = db.execute("SELECT * FROM Submissions WHERE round_num = ?", (num,)).fetchall()
+                random.shuffle(subs)
+                for idx, sub in enumerate(subs, start=1):
+                    author = sub["author_id"]
+                    if config.canon_url:
+                        persona = requests.post(config.canon_url + f"/users/{author}/personas", json={"name": f"[author of #{idx}]", "sudo": True, "temp": True}).json()["id"]
+                    else:
+                        persona = None
+                    db.execute("UPDATE Submissions SET position = ?, persona = ? WHERE round_num = ? AND author_id = ?", (idx, persona, sub["round_num"], author))
+                db.commit()
+                logging.info(f"{user_id} moved round {num} to stage 2")
+                backup(num)
+            case ("unstart round", 1):
+                db.execute("UPDATE Rounds SET stage = 0 WHERE num = ?", (num,))
+                logging.info(f"{user_id} unstarted round {num}")
+            case ("end round", 2):
+                db.execute("UPDATE Rounds SET stage = 3, ended_at = ? WHERE num = ?", (now, num))
+                db.execute("INSERT INTO Rounds (stage, spec, started_at) VALUES (0, '', ?)", (now+datetime.timedelta(days=3),))
+
+                for persona in db.execute("SELECT persona FROM Submissions WHERE round_num = ?", (num,)):
+                    db.execute("UPDATE Comments SET persona = -1, og_persona = COALESCE(og_persona, persona) WHERE persona = ?", persona)
+
+                # tiebreak
+                winners = db.execute("SELECT player_id FROM Scores WHERE round_num = ? AND won ORDER BY player_id", (num,)).fetchall()
+                winner_idx = int.from_bytes(hashlib.sha256(str(num).encode()).digest(), "big") % (len(winners) or 1)
+                for idx, (so_called_winner,) in enumerate(winners):
+                    if idx != winner_idx:
+                        db.execute("INSERT INTO Tiebreaks (round_num, player_id, new_rank) VALUES (?, ?, ?)", (num, so_called_winner, 2))
+
+                db.commit()
+                logging.info(f"{user_id} ended round {num}")
+                backup(num)
+
+                # make public copy
+                shutil.copy("the.db", "static")
+                with open("modify_for_public_viewing.sql") as f:
+                    script = f.read()
+                public_db = connect("static/the.db")
+                public_db.executescript(script)
+
+                if config.canon_url:
+                    requests.post(config.canon_url + "/personas/purge")
+            case (None, _):
+                for key in form:
+                    if not key.startswith("nix-"):
+                        continue
+                    pos = int(key.removeprefix("nix-"))
+                    author, = db.execute("DELETE FROM Submissions WHERE round_num = ? AND position = ? RETURNING author_id", (num, pos)).fetchone()
+
+                    subs = db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", (num,)).fetchall()
+                    db.execute("UPDATE Submissions SET position = NULL WHERE round_num = ?", (num,))
+                    for idx, sub in enumerate(subs, start=1):
+                        if config.canon_url and (persona := sub["persona"]):
+                            requests.patch(config.canon_url + f"/personas/{persona}", json={"name": f"[author of #{idx}]", "sudo": True})
+                        db.execute("UPDATE Submissions SET position = ? WHERE round_num = ? AND author_id = ?", (idx, sub["round_num"], sub["author_id"]))
+
+                    flask.flash(f"disqualified {author} ({get_name(author)})")
+                    logging.info(f"{user_id} disqualified {author}")
+            case _:
+                flask.abort(400)
+    except:
+        raise
+    else:
+        db.commit()
+    finally:
+        db.rollback()
+        if exc := sys.exception():
+            raise exc
+        return flask.redirect(flask.url_for("panel", num=num))
 
 @app.route("/callback")
 def callback():

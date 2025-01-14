@@ -84,8 +84,8 @@ function setPlayerCursor(event) {
 
 function clickPlayer(event) {
     if (isOnPlayerNumber(event)) {
-        const index = Array.from(players.children).indexOf(event.target);
-        document.getElementsByClassName("entry-header").item(index).scrollIntoView();
+        const index = Array.from(players.children).indexOf(event.target) + 1;
+        document.getElementById(index.toString()).scrollIntoView();
     }
 }
 
@@ -198,6 +198,11 @@ function resize(element) {
     element.style.padding = "0px";
     element.style.height = element.scrollHeight + "px";
     element.style.padding = null;
+}
+
+for (const elem of document.getElementsByClassName("comment-content")) {
+    resize(elem);
+    elem.addEventListener("input", () => resize(elem));
 }
 
 function considerSubmit(event) {
