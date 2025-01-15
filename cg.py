@@ -470,7 +470,7 @@ META = """
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta content="website" property="og:type">
-<meta content="https://codeguessing.gay/favicon.png" property="og:image">
+<meta content="https://codeguessing.gay/meta/apple-touch-icon.png" property="og:image">
 <script src="/main.js" defer></script>
 <link rel="stylesheet" href="/main.css">
 <link rel="stylesheet" href="/highlight.css">
