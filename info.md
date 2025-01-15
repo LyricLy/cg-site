@@ -7,7 +7,7 @@ __Players write code to confuse each other, then try to guess which person wrote
 Each round has a writing phase, a guessing phase, and, eventually, a winner!
 
 ### Writing Phase
-A problem gets written up on the [website](/), and announced in the `#event-discussion` channel on Discord. Usually it's something simple like "sort a list". The programming languages you're allowed to use will be specified, along with an outline of the interface your program has to follow.
+A problem gets written up on the [website](/), and announced in the `#new-rounds` channel on Discord. Usually it's something simple like "sort a list". The programming languages you're allowed to use will be specified, along with an outline of the interface your program has to follow.
 
 __If you feel like participating, write a program that solves the problem.__
 Submit it to the site by signing in and uploading the file.
@@ -18,7 +18,7 @@ That is, if you often write very clean, very well-documented code, you might cho
 Writing usually lasts a week long.
 
 ### Guessing Phase
-Once writing is over, the guessing phase is announced in `#event-discussion`. On the website you'll see a list of every player who submitted, along with the code they wrote. Except, __the list is shuffled so you have to guess who wrote which bit of code.__
+Once writing is over, the guessing phase begins. On the website you'll see a list of every player who submitted, along with the code they wrote. Except, __the list is shuffled so you have to guess who wrote which bit of code.__
 
 You guess by clicking and dragging to rearrange the names on the participant list. It saves automatically as long as you've changed the order at all.
 
@@ -67,6 +67,6 @@ The majority of entries are interesting instead — as interesting as their crea
 If you win! and get to pick a new challenge, the best-loved ones are usually very simple. It's never supposed to be difficult to solve the task, because the fun of the game is in writing a program that expresses your individuality without seeming like it expresses your individuality. Challenges usually allow any language, but you can restrict the selection as long as you include Python and a few other common languages.
 
 ### Who's who?
-Most of the chatter around the round is in the `#event-discussion` channel. If you're new, don't worry, we don't bite.
+Most of the chatter around the round is in the `#cg-discussion` channel. If you're new, don't worry, we don't bite.
 
 You'll never know for sure who wrote which entry until the guessing phase is over, but if you look through past rounds you'll probably get some sense of what the regulars write. Check the [stats page](/stats/) to sort by rounds played, or to skim all the entries someone has submitted.
