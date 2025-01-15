@@ -48,7 +48,7 @@ If your submission contains any code that meets all of these criteria, it is sub
 ## Anonymity
 If you have a question or a comment, you might want to say it anonymously. We have a bot that can relay messages to people and channels, without displaying your real username.
 
-If you __message `@Canon#8213` the command `!anon game-discussion`__, then your messages sent to the bot will be forwarded to the `#game-discussion` channel by Canon. You can also write someone's username to speak to them privately. By default, you'll be assigned a random Toki Pona name like "jan Sasun" or "jan Papan", and the messages you send to Canon will be stripped of all punctuation and converted to lowercase before they arrive. You can change name or turn off the message translation using the bot or by visiting this site's [anon settings page](/anon).
+If you __message `@Canon#8213` the command `!anon cg-discussion`__, then your messages sent to the bot will be forwarded to the `#cg-discussion` channel by Canon. You can also write someone's username to speak to them privately. By default, you'll be assigned a random Toki Pona name like "jan Sasun" or "jan Papan", and the messages you send to Canon will be stripped of all punctuation and converted to lowercase before they arrive. You can change name or turn off the message translation using the bot or by visiting this site's [anon settings page](/anon).
 
 Once you're done communicating anonymously, send `!anon stop` or `!anon leave` to Canon. Your randomly generated name is usually reset between each round, but you have the option of switching to other names through the bot or site. Be warned that if you use the anonymity for mischief, the server admins do have the ability to unmask you.
 
