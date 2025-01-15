@@ -82,10 +82,16 @@ def get_summary(spec):
     l = spec.splitlines()
     return l[0].replace("*", "") if l else None
 
+def join_warning(user_id):
+    if user_id and not can_play(user_id):
+        return f'<aside>note: you are not on <a href="{config.invite_link}">the Discord server</a>. joining it is a requirement to play.</aside>'
+    return ""
+
 @app.route("/index/")
 def index():
     nums = get_db().execute("SELECT num, started_at, spec, stage FROM Rounds ORDER BY num DESC").fetchall()
     rounds = "".join(f"<li><a href='/{n}/'>round #{n}</a> ({get_title(spec)})</li>" if stage else f"<li>round #{n} at {format_time(start)}</li>" for n, start, spec, stage in nums)
+    user_id = fetch_user_id()
     return f"""
 <!DOCTYPE html>
 <html>
@@ -103,9 +109,10 @@ def index():
       &bull; <a href="/info">info</a>
       &bull; <a href="/credits">credits</a>
       &bull; <a href="/anon">anon settings</a>
-      {f' &bull; <a href="/admin/">admin panel</a>'*is_admin(fetch_user_id())}
-      {f' &bull; <a href="/logout">log out</a>'*bool(fetch_user())}
+      {f' &bull; <a href="/admin/">admin panel</a>'*is_admin(user_id)}
+      {f' &bull; <a href="/logout">log out</a>'*bool(user_id)}
     </p>
+    {join_warning(user_id)}
     <ul>{rounds}</ul>
   </body>
 </html>
@@ -578,6 +585,7 @@ def show_round(num):
     <h2>entries</h2>
     <p>{entries}</p>
     <h2>submit</h2>
+    {join_warning(user_id)}
     <p>{flash()}</p>
     {panel}
   </body>
@@ -689,6 +697,11 @@ def guess_language(filename, content):
         return "text"
     return guess
 
+def can_play(user_id):
+    if not config.canon_url:
+        return True
+    return requests.get(config.canon_url + f"/users/{user_id}").json()["can_play"]
+
 @app.route("/<int:num>/", methods=["POST"])
 def take(num):
     db = get_db()
@@ -698,7 +711,7 @@ def take(num):
     user = fetch_user()
     if not user:
         flask.abort(403)
-    if config.canon_url and not requests.get(config.canon_url + f"/users/{user.id}").json()["can_play"]:
+    if not can_play(user.id):
         logging.info(f"{user.id} not on server, forbidding")
         flask.abort(403)
     db.execute("INSERT OR REPLACE INTO People VALUES (?, ?)", (user.id, name_of_user(user)))

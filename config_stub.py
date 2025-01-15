@@ -23,6 +23,9 @@ cache_display = True
 # If set to "canon" and canon_url is set, Canon will be queried for the list of admins
 admin_ids = []
 
+# Where to link players that aren't on the server Canon filters to
+invite_link = ""
+
 # Which rounds to display certain figures for
 # There should be no reason to change these from the provided values
 likes_since = 1
