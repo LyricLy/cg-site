@@ -926,7 +926,7 @@ def stats():
     <meta content="code guessing stats" property="og:title">
     <meta content="{desc}" property="og:description">
     <meta content="https://codeguessing.gay/stats/" property="og:url">
-    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/dist/sortable.min.js"></script>
     <title>cg stats</title>
   </head>
   <body>
@@ -970,10 +970,10 @@ def user_stats(player):
 <html>
   <head>
     {META}
-    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/sortable.min.js"></script>
     <meta content="{player}'s code guessing stats" property="og:title">
     <meta content="see their {sc} awesome entries" property="og:description">
     <meta content="https://codeguessing.gay/stats/{player}" property="og:url">
+    <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/dist/sortable.min.js"></script>
     <title>cg - {player}</title>
   </head>
   <body>
