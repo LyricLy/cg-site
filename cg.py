@@ -442,8 +442,7 @@ def render_submission(db, row, show_info, written_by=True):
     return entries
 
 def render_submissions(db, num, show_info):
-    hide_button = f'<button title="toggle showing locked entries while guessing" ontoggle="toggleHide()" id="hide-button" class="toggle" alt="🕶️🔒">👓🔒</button>'*(not show_info)
-    entries = f'<h2>entries {hide_button}</h2><p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
+    entries = f'<p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
     for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<div class="entry"><h3 id="{position}">entry #{position}</h3>'
@@ -594,6 +593,7 @@ def show_round(num):
         case 2:
             entries = render_submissions(db, num, False)
             if user_id and (e := db.execute("SELECT position, finished_guessing FROM Submissions WHERE author_id = ? AND round_num = ?", (user_id, num)).fetchone()):
+                entries_header = f'<h2>entries <button title="toggle showing locked entries while guessing" ontoggle="toggleHide()" id="hide-button" class="toggle" alt="🕶️🔒">👓🔒</button></h2>'
                 your_pos, finished = e
                 panel = f'''
 <div id="guess-panel">
@@ -615,6 +615,7 @@ def show_round(num):
                         panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}{" finished"*finished}" {events}><a style="color:unset" href="/stats/{name}">{name}</a> {lock_button}</li>'
                 panel += "</ol></div>"
             else:
+                entries_header = '<h2>entries</h2>'
                 panel = '<h2>players</h2><ol>'
                 query = db.execute("SELECT name FROM Submissions INNER JOIN People ON id = author_id WHERE round_num = ? ORDER BY name COLLATE NOCASE", (num,)).fetchall()
                 for name, in query:
@@ -642,6 +643,7 @@ def show_round(num):
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
     {show_spec(rnd)}
     {panel}
+    {entries_header}
     {entries}
   </body>
 </html>
@@ -681,6 +683,7 @@ def show_round(num):
     {show_spec(rnd)}
     <h2>results</h2>
     {results}
+    <h2>entries</h2>
     {entries}
   </body>
 </html>
