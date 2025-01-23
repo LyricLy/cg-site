@@ -1125,6 +1125,7 @@ def take_admin(num):
     form = flask.request.form
     try:
         db.execute("UPDATE Rounds SET spec = ? WHERE num = ?", (form["spec"], num))
+        db.execute("UPDATE Submissions SET cached_display = NULL WHERE round_num = ?", (num,))
         for key, value in form.items():
             # the pain of being str()'d
             if value == "None":
