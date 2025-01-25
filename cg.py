@@ -1006,9 +1006,9 @@ def canon_settings():
             end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
             panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
         panel += f'<li><input name="name" type="text" size="16"> <input type="submit" name="add" value="add"> {flash()}</li></ul>'
-        for setting in settings:
+        for setting in settings["settings"]:
             panel += f'<h3>{setting["display"].lower()} <input type="checkbox" name="{setting["name"]}"{" checked"*setting["value"]}></h3><p>{setting["blurb"].lower()}</p>'
-        panel += '<input type="submit" value="save"></form>'
+        panel += f'<input type="submit" value="save"></form><p><sup>Entropy (lower is better): {settings["entropy"]:.2f}</sup></p>'
     return f"""
 <!DOCTYPE html>
 <html>
