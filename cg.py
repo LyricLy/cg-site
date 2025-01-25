@@ -1008,7 +1008,7 @@ def canon_settings():
         panel += f'<li><input name="name" type="text" size="16"> <input type="submit" name="add" value="add"> {flash()}</li></ul>'
         for setting in settings["settings"]:
             panel += f'<h3>{setting["display"].lower()} <input type="checkbox" name="{setting["name"]}"{" checked"*setting["value"]}></h3><p>{setting["blurb"].lower()}</p>'
-        panel += f'<input type="submit" value="save"></form><p><sup>Entropy (lower is better): {settings["entropy"]:.2f}</sup></p>'
+        panel += f'<input type="submit" value="save"></form><p><sup>identifiable information (bits, lower is better): {settings["entropy"]:.2f}</sup></p>'
     return f"""
 <!DOCTYPE html>
 <html>
