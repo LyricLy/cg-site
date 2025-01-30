@@ -97,11 +97,11 @@ def index():
 <html>
   <head>
     {META}
-    <meta content="code guessing" property="og:title">
-    <meta name="description" content="a game about writing code anonymously and guessing who wrote what.">
-    <meta content="code and guess and such." property="og:description">
-    <meta content="https://codeguessing.gay/index/" property="og:url">
-    <title>code guessing</title>
+    <meta content="{config.t}" property="og:title">
+    <meta name="description" content="{config.meta_desc}">
+    <meta content="{config.meta_desc}" property="og:description">
+    <meta content="{config.canonical}/index/" property="og:url">
+    <title>{config.t}</title>
   </head>
   <body>
     <p>
@@ -132,49 +132,18 @@ def download_file(num, name):
 def download_file_available_for_public_access(name):
     return flask.send_from_directory("./files/", name)
 
-@app.route("/credits")
-def credits():
-    return f"""
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>cg - credits</title>
-    {META}
-    <meta content="code guessing credits" property="og:title">
-    <meta content="all the people that made this happen." property="og:description">
-    <meta content="https://codeguessing.gay/credits" property="og:url">
-  </head>
-  <body>
-    <a href="/index/">index</a>
-    <h1>credits and acknowledgements</h1>
-    <ul>
-      <li>umnikos - initial concept</li>
-      <li>ubq323 - creating the original ruleset and hosting the first 5 rounds</li>
-      <li>HelloBoi, deadbraincoral - helping host round 4</li>
-      <li>sonata «pathétique» - helping host the first 5 rounds</li>
-      <li>LyricLy - rule amendments, bot development, site development, and hosting round 6 and onwards</li>
-      <li>RocketRace, olus2000, Palaiologos, razetime - ideas and advice</li>
-      <li>IFcoltransG - writing the info page</li>
-      <li>Delapouite - creating the dice symbol used in the icon</li>
-      <li>the players - designing the rounds and writing the submissions</li>
-    </ul>
-  </body>
-</html>
-"""
-
-@app.route("/info")
-def info():
-    with open("info.md") as f:
+def show_md(title, desc):
+    with open(f"mds/{title}.md") as f:
         m = markdown(f.read())
     return f"""
 <!DOCTYPE html>
 <html>
   <head>
-    <title>cg - info</title>
+    <title>{config.s} - {title}</title>
     {META}
-    <meta content="code guessing info" property="og:title">
-    <meta content="what is code guessing?" property="og:description">
-    <meta content="https://codeguessing.gay/info" property="og:url">
+    <meta content="{config.t} {title}" property="og:title">
+    <meta content="{desc}" property="og:description">
+    <meta content="{config.canonical}/info" property="og:url">
   </head>
   <body>
     <a href="/index/">index</a>
@@ -182,6 +151,14 @@ def info():
   </body>
 </html>
 """
+
+@app.route("/info")
+def info():
+    return show_md("info", f"what is {config.t}?")
+
+@app.route("/credits")
+def credits():
+    return show_md("credits", "all the people that helped make this happen.")
 
 def external_url(lang):
     if str(lang).startswith("external"):
@@ -466,17 +443,17 @@ LANGUAGES = [
     "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
 ]
 ADMIN_LANGUAGES = [*LANGUAGES, "pdf", "archive"]
-META = """
+META = f"""
 <link rel="icon" type="image/png" href="/meta/favicon-96x96.png" sizes="96x96">
 <link rel="icon" type="image/svg+xml" href="/meta/favicon.svg">
 <link rel="shortcut icon" href="/meta/favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="/meta/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="cg">
+<meta name="apple-mobile-web-app-title" content="{config.s}">
 <link rel="manifest" href="/meta/site.webmanifest">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta content="website" property="og:type">
-<meta content="https://codeguessing.gay/meta/apple-touch-icon.png" property="og:image">
+<meta content="{config.canonical}/meta/apple-touch-icon.png" property="og:image">
 <script src="/main.js" defer></script>
 <link rel="stylesheet" href="/main.css">
 <link rel="stylesheet" href="/highlight.css">
@@ -570,15 +547,15 @@ def show_round(num):
 <!DOCTYPE html>
 <html>
   <head>
-    <title>cg #{num}/1</title>
+    <title>{config.s} #{num}/1</title>
     {META}
-    <meta content="code guessing #{num}/1" property="og:title">
+    <meta content="{config.t} #{num}/1" property="og:title">
     <meta content="{meta_desc}" property="og:description">
-    <meta content="https://codeguessing.gay/{num}/" property="og:url">
+    <meta content="{config.canonical}/{num}/" property="og:url">
   </head>
   <body>
     {top}
-    <h1>code guessing, round #{num}, stage 1 (writing)</h1>
+    <h1>{config.t}, round #{num}, stage 1 (writing)</h1>
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
     {show_spec(rnd)}
     <h2>entries</h2>
@@ -630,16 +607,16 @@ def show_round(num):
 <!DOCTYPE html>
 <html>
   <head>
-    <title>cg #{num}/2</title>
+    <title>{config.s} #{num}/2</title>
     {META}
-    <meta content="code guessing #{num}/2" property="og:title">
+    <meta content="{config.t} #{num}/2" property="og:title">
     <meta content="{len(query)} submissions received. guess by {guess_by.strftime('%B %d (%A)')}." property="og:description">
-    <meta content="https://codeguessing.gay/{num}/" property="og:url">
+    <meta content="{config.canonical}/{num}/" property="og:url">
     <script src="https://cdn.jsdelivr.net/gh/SortableJS/Sortable@master/Sortable.min.js"></script>
   </head>
   <body>
     {top}
-    <h1>code guessing, round #{num}, stage 2 (guessing)</h1>
+    <h1>{config.t}, round #{num}, stage 2 (guessing)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 since {format_time(rnd['stage2_at'])}. guess by {format_time(guess_by)}</p>
     {show_spec(rnd)}
     {panel}
@@ -671,14 +648,14 @@ def show_round(num):
 <html>
   <head>
     {META}
-    <meta content="code guessing #{num}" property="og:title">
+    <meta content="{config.t} #{num}" property="og:title">
     <meta content="round concluded." property="og:description">
-    <meta content="https://codeguessing.gay/{num}/" property="og:url">
-    <title>cg #{num}</title>
+    <meta content="{config.canonical}/{num}/" property="og:url">
+    <title>{config.s} #{num}</title>
   </head>
   <body>
     {top}
-    <h1>code guessing, round #{num} (completed)</h1>
+    <h1>{config.t}, round #{num} (completed)</h1>
     <p>started at {format_time(rnd['started_at'])}; stage 2 at {format_time(rnd['stage2_at'])}; ended at {format_time(rnd['ended_at'])}</p>
     {show_spec(rnd)}
     <h2>results</h2>
@@ -802,7 +779,7 @@ def take(num):
                     if reply:
                         reply_author, = db.execute("SELECT author_id FROM Comments WHERE id = ?", (reply,)).fetchone()
                     if config.canon_url:
-                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "content": content, "url": f"https://codeguessing.gay/{num}/#c{id}"})
+                        requests.post(config.canon_url + "/notify", json={"reply": reply_author, "parent": parent, "persona": persona, "user": user.id, "content": content, "url": f"{config.canonical}/{num}/#c{id}"})
             case ("delete-comment", 2 | 3):
                 id = form["id"]
                 owner, pos = db.execute(
@@ -926,15 +903,15 @@ def stats():
 <html>
   <head>
     {META}
-    <meta content="code guessing stats" property="og:title">
+    <meta content="{config.t} stats" property="og:title">
     <meta content="{desc}" property="og:description">
-    <meta content="https://codeguessing.gay/stats/" property="og:url">
+    <meta content="{config.canonical}/stats/" property="og:url">
     <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/dist/sortable.min.js"></script>
-    <title>cg stats</title>
+    <title>{config.s} stats</title>
   </head>
   <body>
     <a href="/index/">index</a>
-    <h1>code guessing stats</h1>
+    <h1>{config.t} stats</h1>
     <p>welcome. more coming soon!</p>
     <h2>leaderboard</h2>
     <form>
@@ -973,11 +950,11 @@ def user_stats(player):
 <html>
   <head>
     {META}
-    <meta content="{player}'s code guessing stats" property="og:title">
+    <meta content="{player}'s {config.t} stats" property="og:title">
     <meta content="see their {sc} awesome entries" property="og:description">
-    <meta content="https://codeguessing.gay/stats/{player}" property="og:url">
+    <meta content="{config.canonical}/stats/{player}" property="og:url">
     <script src="https://cdn.jsdelivr.net/gh/tofsjonas/sortable@master/dist/sortable.min.js"></script>
-    <title>cg - {player}</title>
+    <title>{config.s} - {player}</title>
   </head>
   <body>
     <a href="/stats">all stats</a>
@@ -1015,8 +992,8 @@ def canon_settings():
   <head>
     {META}
     <meta content="anon settings" property="og:title">
-    <meta content="configure the behaviour of cg and canon in regards to anonymous posts" property="og:description">
-    <meta content="https://codeguessing.gay/anon" property="og:url">
+    <meta content="configure the behaviour of {config.s} and canon in regards to anonymous posts" property="og:description">
+    <meta content="{config.canonical}/anon" property="og:url">
     <title>anon settings</title>
   </head>
   <body>

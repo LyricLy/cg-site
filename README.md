@@ -12,6 +12,7 @@ The official implementation of [code guessing](https://codeguessing.gay).
         - Copy the client secret for `client_secret`
         - Add a redirect in `OAuth2 -> General` of the form `https://my.site/callback` and set `cb_url` to the same URL
     - Set `log_file` to a filename
+    - Set `canonical` to the canonical base URL of the server (like `"https://codeguessing.gay"`)
     - (Optional) Set `canon_url` to the URL to your Canon server (see below)
     - Add the IDs of people allowed to use the admin panel to `admin_ids`, or set `admin_ids = "canon"` to use the same set as Canon if `canon_url` is set
 - Create a SQLite database called `the.db` and run `schema.sql` in it

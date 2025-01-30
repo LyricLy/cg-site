@@ -8,11 +8,14 @@ client_secret = ""
 # Callback URL for OAuth2, should have path /callback
 cb_url = ""
 
+# Canonical base URL of the site
+canonical = ""
+
 # Optional file to write logs to
 log_file = None
 
 # Base URL to Canon server
-canon_url = ""
+canon_url = None
 
 # Whether to cache the display of submissions (syntax highlighting, etc)
 # Should be True in production, as pygments is slow
@@ -25,6 +28,15 @@ admin_ids = []
 
 # Where to link players that aren't on the server Canon filters to
 invite_link = ""
+
+# What the game is called
+t = "code guessing"
+
+# Abbreviation of the name
+s = "cg"
+
+# Description of the game used in meta tags
+meta_desc = "a game about writing code anonymously and guessing who wrote what."
 
 # Which rounds to display certain figures for
 # There should be no reason to change these from the provided values
