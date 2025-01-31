@@ -38,6 +38,15 @@ s = "cg"
 # Description of the game used in meta tags
 meta_desc = "a game about writing code anonymously and guessing who wrote what."
 
+# Duration of Stage 1
+stage1_days = 7
+
+# Duration of Stage 2
+stage2_days = 4
+
+# Time between rounds
+stage0_days = 3
+
 # Which rounds to display certain figures for
 # There should be no reason to change these from the provided values
 likes_since = 1

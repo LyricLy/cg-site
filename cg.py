@@ -1121,10 +1121,10 @@ def take_admin(num):
         now = datetime.datetime.now(datetime.timezone.utc)
         match (form.get("action"), rnd["stage"]):
             case ("start round", 0):
-                db.execute("UPDATE Rounds SET stage = 1, started_at = ?, stage2_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=7), num))
+                db.execute("UPDATE Rounds SET stage = 1, started_at = ?, stage2_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=config.stage1_days), num))
                 logging.info(f"{user_id} started round {num}")
             case ("move to stage 2", 1):
-                db.execute("UPDATE Rounds SET stage = 2, stage2_at = ?, ended_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=4), num))
+                db.execute("UPDATE Rounds SET stage = 2, stage2_at = ?, ended_at = ? WHERE num = ?", (now, now+datetime.timedelta(days=config.stage2_days), num))
                 subs = db.execute("SELECT * FROM Submissions WHERE round_num = ?", (num,)).fetchall()
                 random.shuffle(subs)
                 for idx, sub in enumerate(subs, start=1):
@@ -1142,7 +1142,7 @@ def take_admin(num):
                 logging.info(f"{user_id} unstarted round {num}")
             case ("end round", 2):
                 db.execute("UPDATE Rounds SET stage = 3, ended_at = ? WHERE num = ?", (now, num))
-                db.execute("INSERT INTO Rounds (stage, spec, started_at) VALUES (0, '', ?)", (now+datetime.timedelta(days=3),))
+                db.execute("INSERT INTO Rounds (stage, spec, started_at) VALUES (0, '', ?)", (now+datetime.timedelta(days=config.stage0_days),))
 
                 for persona in db.execute("SELECT persona FROM Submissions WHERE round_num = ?", (num,)):
                     db.execute("UPDATE Comments SET persona = -1, og_persona = COALESCE(og_persona, persona) WHERE persona = ?", persona)
