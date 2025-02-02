@@ -395,7 +395,7 @@ def render_submission(db, row, show_info, written_by=True):
             target ,= target
             entries += f"impersonating {get_name(target)}<br>"
         likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
-        if num >= 13:
+        if num in config.likes_since:
             entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
         entries += "<details><summary><strong>guesses</strong></summary><ul>"
         for guesser, guess_id in sorted(db.execute("SELECT player_id, guess FROM Guesses WHERE round_num = ? AND actual = ?", (num, author)), key=lambda x: get_name(x[1])):
