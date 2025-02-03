@@ -23,7 +23,7 @@ cache_display = True
 
 # Discord IDs of admins
 # Gives access to the admin panel, and allows you to delete other people's comments
-# If set to "canon" and canon_url is set, Canon will be queried for the list of admins
+# If set to a Discord role ID and canon_url is set, people with that role will be admins
 admin_ids = []
 
 # Where to link players that aren't on the server Canon filters to
