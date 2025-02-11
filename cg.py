@@ -383,11 +383,11 @@ def render_files(db, num, author, languages=None):
 
 def render_submission(db, row, show_info, written_by=True):
     author, num, submitted_at, cached_display, position = row
-    entries = ""
+    entries = "<p>"
     if show_info:
         name = get_name(author)
         if written_by:
-            entries += f"<p>written by {name}<br>"
+            entries += f"written by {name}<br>"
         target = db.execute("SELECT target FROM Targets WHERE round_num = ? AND player_id = ?", (num, author)).fetchone()
         if submitted_at:
             entries += f"submitted at {format_time(submitted_at)}<br>"
@@ -396,8 +396,8 @@ def render_submission(db, row, show_info, written_by=True):
             entries += f"impersonating {get_name(target)}<br>"
         likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
         if num >= config.likes_since:
-            entries += "1 like</p>" if likes == 1 else f"{likes} likes</p>"
-        entries += "<details><summary><strong>guesses</strong></summary><ul>"
+            entries += "1 like" if likes == 1 else f"{likes} likes"
+        entries += "</p><details><summary><strong>guesses</strong></summary><ul>"
         for guesser, guess_id in sorted(db.execute("SELECT player_id, guess FROM Guesses WHERE round_num = ? AND actual = ?", (num, author)), key=lambda x: get_name(x[1])):
             guess = get_name(guess_id)
             if guess_id == author:
@@ -710,6 +710,7 @@ def take(num):
                     guess = guess_language(file.filename, b)
                     db.execute("INSERT INTO Files (name, author_id, round_num, content, lang) VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
                 logging.info(f"accepted files {', '.join(str(x.filename) for x in files)} from {user.id}")
+                flask.flash("submitted successfully")
             case ("langs", 1):
                 for key, value in form.items():
                     if key == "type":
@@ -720,6 +721,7 @@ def take(num):
                     if value not in LANGUAGES:
                         flask.abort(400)
                     db.execute("UPDATE Files SET lang = ? WHERE round_num = ? AND name = ?", (value, num, key))
+                flask.flash("changed languages")
             case ("guess", 2):
                 db.execute("DELETE FROM Guesses WHERE round_num = ? AND player_id = ?", (num, user.id))
                 guesses = form.getlist("guess")
@@ -796,7 +798,6 @@ def take(num):
     except:
         raise
     else:
-        flask.flash("submitted successfully")
         db.commit()
     finally:
         db.rollback()
@@ -978,7 +979,7 @@ def canon_settings():
     else:
         settings = requests.get(config.canon_url + f"/users/{user}/settings").json()
         personas = requests.get(config.canon_url + f"/users/{user}/personas").json()
-        panel = '<form method="POST"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p><ul>'
+        panel = '<form method="post"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p><ul>'
         for persona in personas:
             end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
             panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
@@ -1084,7 +1085,7 @@ def panel(num):
     </form>
   </body>
 </html>
-    """
+"""
 
 def backup(num):
     os.makedirs("backups", exist_ok=True)
