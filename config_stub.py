@@ -5,9 +5,6 @@ secret_key = b""
 app_id = 0
 client_secret = ""
 
-# Callback URL for OAuth2, should have path /callback
-cb_url = ""
-
 # Canonical base URL of the site
 canonical = ""
 
