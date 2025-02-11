@@ -37,6 +37,8 @@ CREATE TABLE Files (
     FOREIGN KEY (author_id, round_num) REFERENCES Submissions(author_id, round_num) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+CREATE INDEX files_of_submission ON Files (round_num, author_id);
+
 CREATE TABLE Guesses (
     round_num INTEGER NOT NULL,
     player_id INTEGER NOT NULL,
