@@ -382,17 +382,15 @@ def render_files(db, num, author, languages=None):
 
 
 def render_submission(db, row, show_info, written_by=True):
-    author, num, submitted_at, cached_display, position = row
+    author, num, submitted_at, cached_display, position, target = row
     entries = "<p>"
     if show_info:
         name = get_name(author)
         if written_by:
             entries += f"written by {name}<br>"
-        target = db.execute("SELECT target FROM Targets WHERE round_num = ? AND player_id = ?", (num, author)).fetchone()
         if submitted_at:
             entries += f"submitted at {format_time(submitted_at)}<br>"
         if target:
-            target ,= target
             entries += f"impersonating {get_name(target)}<br>"
         likes, = db.execute("SELECT COUNT(*) FROM Likes WHERE round_num = ? AND liked = ?", (num, author)).fetchone()
         if num >= config.likes_since:
@@ -420,7 +418,7 @@ def render_submission(db, row, show_info, written_by=True):
 
 def render_submissions(db, num, show_info):
     entries = f'<p>you can <a id="download" href="/{num}.tar.bz2">download</a> all the entries</p>'
-    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position, target FROM Submissions WHERE round_num = ? ORDER BY position", (num,)):
         position = r["position"]
         entries += f'<div class="entry"><h3 id="{position}">entry #{position}</h3>'
         entries += render_submission(db, r, show_info)
@@ -940,7 +938,7 @@ def user_stats(player):
     scourges = build_table(cols, db.execute(FIND.format(SCOURGES), (player_id,)).fetchall())
     s = ""
     sc = 0
-    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num DESC", (player_id,)):
+    for r in db.execute("SELECT author_id, round_num, submitted_at, cached_display, position, target FROM Submissions INNER JOIN Rounds ON num = round_num WHERE stage = 3 AND author_id = ? ORDER BY round_num DESC", (player_id,)):
         position = r["position"]
         num = r["round_num"]
         s += f'<h3 id="{num}"><a href="/{num}/#{position}">round #{num}</a></h3>'
