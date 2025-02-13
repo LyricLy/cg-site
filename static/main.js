@@ -194,10 +194,12 @@ function shuffleGuesses() {
 }
 
 function resize(element) {
-    element.style.height = "1px";
-    element.style.padding = "0px";
-    element.style.height = element.scrollHeight + "px";
-    element.style.padding = null;
+    const other = element.cloneNode(true);
+    other.style.height = "1px";
+    other.style.padding = "0px";
+    element.parentElement.append(other);
+    element.style.height = other.scrollHeight + "px";
+    other.remove();
 }
 
 for (const elem of document.getElementsByClassName("comment-content")) {

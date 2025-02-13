@@ -2,5 +2,6 @@ __pycache__/
 *.db
 config.py
 files/
+extra/
 esolangs.gay-ssl-bundle/
 data.log

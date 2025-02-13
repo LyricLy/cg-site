@@ -12,6 +12,7 @@ import tarfile
 import zipfile
 import json
 import logging
+import importlib
 from collections import defaultdict
 from pathlib import PurePosixPath
 
@@ -130,7 +131,15 @@ def download_file(num, name):
 
 @app.route("/files/<path:name>")
 def download_file_available_for_public_access(name):
-    return flask.send_from_directory("./files/", name)
+    return flask.send_from_directory("files/", name)
+
+@app.route("/extra/<string:name>", methods=["GET", "POST"])
+def load_extra_module(name):
+    try:
+        module = importlib.import_module(f".{name}", "extra")
+    except ImportError as e:
+        flask.abort(404)
+    return module.respond()
 
 def show_md(title, desc):
     with open(f"mds/{title}.md") as f:
