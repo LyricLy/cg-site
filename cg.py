@@ -16,7 +16,7 @@ import importlib
 from collections import defaultdict
 from pathlib import PurePosixPath
 
-import bleach
+import nh3
 import charset_normalizer
 import magic
 import mistune
@@ -211,7 +211,7 @@ def download_round_bzip2(num):
     return flask.send_file(make_tar(num, "bz2"), mimetype="application/x-bzip2")
 
 def get_name(i):
-    return bleach.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
+    return nh3.clean(get_db().execute("SELECT name FROM People WHERE id = ?", (i,)).fetchone()[0])
 
 def format_time(dt):
     return f'<time role="timer" datetime="{dt.isoformat()}">{dt.isoformat()}</time>'
@@ -221,7 +221,7 @@ def persona_name(author, persona, d={}):
         return get_name(author) + ' <span class="verified"></span>'
     if not config.canon_url:
         return "[unknown]"
-    return d.get(persona) or d.setdefault(persona, bleach.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
+    return d.get(persona) or d.setdefault(persona, nh3.clean(requests.get(config.canon_url + f"/personas/{persona}").json()["name"]))
 
 def name_of_user(user):
     return user.to_json()["global_name"] or user.name
@@ -329,7 +329,7 @@ def render_file(name, content, lang, url=None, dropdown_name=None, languages=Non
         lang = None
 
     file = ""
-    name = bleach.clean(name)
+    name = nh3.clean(name)
     header_name = name if not url else f'<a href="{url}">{name}</a>'
     header = f'{header_name} <small><em>{filetype}</em></small>'
     if languages:
@@ -989,7 +989,7 @@ def canon_settings():
         panel = '<form method="post"><input type="submit" class="hidden-submit" name="add"><h3>personas</h3><p>the names that belong to you. temporary personas will be removed and remade each round.</p><ul>'
         for persona in personas:
             end = f'<input type="submit" name="{persona["id"]}" value="delete">' if not persona["temp"] else "<em>(temp)</em>"
-            panel += f'<li><strong>{bleach.clean(persona["name"])}</strong> {end}</li>'
+            panel += f'<li><strong>{nh3.clean(persona["name"])}</strong> {end}</li>'
         panel += f'<li><input name="name" type="text" size="16"> <input type="submit" name="add" value="add"> {flash()}</li></ul>'
         for setting in settings["settings"]:
             panel += f'<h3>{setting["display"].lower()} <input type="checkbox" name="{setting["name"]}"{" checked"*setting["value"]}></h3><p>{setting["blurb"].lower()}</p>'

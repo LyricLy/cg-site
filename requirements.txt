@@ -1,7 +1,7 @@
 Flask>=2.0.2
 Flask-Discord>=0.1.66
 pygments>=2.11.2
-bleach>=4.1.0
+nh3>=0.2.20
 python-magic>=0.4.25
 charset-normalizer>=2.0.12
 mistune>=2.0.0
