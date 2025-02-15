@@ -830,7 +830,7 @@ SEASON_EVERY = 10
 @app.route("/stats/")
 def stats():
     db = get_db()
-    round_count, = db.execute("SELECT MAX(num) FROM Rounds WHERE stage = 3").fetchone()
+    round_count, = db.execute("SELECT COALESCE(MAX(num), 0) FROM Rounds WHERE stage = 3").fetchone()
     try:
         after_round = min(max(int(flask.request.args.get("after", ((round_count-1) // SEASON_EVERY * SEASON_EVERY) + 1)), 1), round_count)
         before_round = min(max(int(flask.request.args.get("before", round_count)), after_round), round_count)
@@ -902,6 +902,8 @@ def stats():
 
     table = build_table([f'<span title="{y}">{x}</span>' for x, y in cols], rows)
     match [tuple(x[1]) for x in e if x[0] == 1]:
+        case []:
+            desc = "the leaderboard is empty."
         case [(name, (total, *_))]:
             desc = f"{get_name(name)} leads with {total} points."
         case [(_, (total, *_)), *xs]:
