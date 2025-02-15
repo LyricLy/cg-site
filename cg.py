@@ -4,6 +4,7 @@ import io
 import itertools
 import os
 import re
+import exif
 import random
 import hashlib
 import shutil
@@ -446,12 +447,7 @@ def rank_enumerate(xs, *, key):
             cur_key = key(x)
         yield (cur_idx, x)
 
-LANGUAGES = [
-    "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "rb", "st", "zig", "cpp", "go", "c#", "java", "kotlin", "groovy",
-    "d", "swift", "pl", "php", "scm", "janet", "elisp", "raku", "apl", "bqn", "j", "k", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
-    "nim", "nb", "forth", "factor", "elm", "vim", "tcl", "sed", "nix", "tal", "sh", "jl", "matlab", "prolog",
-    "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "sql", "image", "text", None
-]
+LANGUAGES = ["md", "html", "image", "text", None]
 ADMIN_LANGUAGES = [*LANGUAGES, "pdf", "archive"]
 META = f"""
 <link rel="icon" type="image/png" href="/meta/favicon-96x96.png" sizes="96x96">
@@ -721,6 +717,13 @@ def take(num):
                 db.execute("DELETE FROM Files WHERE round_num = ? AND author_id = ?", (num, user.id))
                 for file in files:
                     b = file.read()
+                    try:
+                        e = exif.Image(b)
+                        e.delete_all()
+                    except KeyError:
+                        pass
+                    else:
+                        b = e.get_file()
                     guess = guess_language(file.filename, b)
                     db.execute("INSERT INTO Files (name, author_id, round_num, content, lang) VALUES (?, ?, ?, ?, ?)", (file.filename, user.id, num, b, guess))
                 logging.info(f"accepted files {', '.join(str(x.filename) for x in files)} from {user.id}")
