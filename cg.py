@@ -558,7 +558,7 @@ def show_round(num):
   </head>
   <body>
     {top}
-    <h1>{config.t}, round #{num}, stage 1 (writing)</h1>
+    <h1>{config.t}, round #{num}, stage 1 (making)</h1>
     <p>started at {format_time(rnd['started_at'])}. submit by {format_time(submit_by)}</p>
     {show_spec(rnd)}
     <h2>entries</h2>
