@@ -7,7 +7,7 @@ This is a game based on [code guessing](https://codeguessing.gay/info) with the 
 Each round has a creation phase, a guessing phase, and, eventually, a winner!
 
 ### Creation Phase
-A task gets written up on the [website](/), and announced in the `#new-rounds` channel on Discord. Usually it's something simple like "take a picture". The specifics of what you are to submit will be described.
+A task gets written up on the [website](/), and announced in the `#event-announcements` channel on Discord. Usually it's something simple like "take a picture". The specifics of what you are to submit will be described.
 
 __If you feel like participating, follow the instructions and make what the specification calls for.__
 Submit it to the site by signing in and uploading the file(s).
