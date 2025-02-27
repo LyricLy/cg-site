@@ -1140,7 +1140,7 @@ def take_admin(num):
                 for idx, sub in enumerate(subs, start=1):
                     author = sub["author_id"]
                     if config.canon_url:
-                        persona = requests.post(config.canon_url + f"/users/{author}/personas", json={"name": f"[author of #{idx}]", "sudo": True, "temp": True}).json()["id"]
+                        persona = requests.post(config.canon_url + f"/users/{author}/personas", json={"name": f"[{config.s}'s #{idx}]", "sudo": True, "temp": True}).json()["id"]
                     else:
                         persona = None
                     db.execute("UPDATE Submissions SET position = ?, persona = ? WHERE round_num = ? AND author_id = ?", (idx, persona, sub["round_num"], author))
