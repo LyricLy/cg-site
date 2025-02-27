@@ -198,6 +198,7 @@ function resize(element) {
     other.style.height = "1px";
     other.style.padding = "0px";
     element.parentElement.append(other);
+    other.scrollHeight;  // removing this breaks us on Firefox. I don't know why.
     element.style.height = other.scrollHeight + "px";
     other.remove();
 }
