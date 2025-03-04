@@ -713,7 +713,7 @@ def take(num):
                     try:
                         e = exif.Image(b)
                         e.delete_all()
-                    except KeyError:
+                    except (KeyError, ValueError):
                         pass
                     else:
                         b = e.get_file()
