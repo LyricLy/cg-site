@@ -4,7 +4,7 @@ import io
 import itertools
 import os
 import re
-import exif
+import exif; from plum.exceptions import UnpackError
 import random
 import hashlib
 import shutil
@@ -713,7 +713,7 @@ def take(num):
                     try:
                         e = exif.Image(b)
                         e.delete_all()
-                    except (KeyError, ValueError):
+                    except (KeyError, ValueError, UnpackError):
                         pass
                     else:
                         b = e.get_file()
