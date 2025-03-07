@@ -772,7 +772,7 @@ def take(num):
                     if user.id != owner:
                         flask.abort(403)
                     db.execute(
-                        "UPDATE Comments SET content = ?, unchanged_content = ?, edited_at = ?, reply = ?, persona = ?, og_persona = IIF(og_persona IS NULL AND ?4 != persona, persona, og_persona) WHERE id = ?",
+                        "UPDATE Comments SET content = ?1, unchanged_content = ?2, edited_at = ?3, reply = ?4, persona = ?5, og_persona = IIF(og_persona IS NULL AND ?5 != persona, persona, og_persona) WHERE id = ?6",
                         (content, unchanged_content, time, reply, persona, edit),
                     )
                     anchor = f"c{edit}"
