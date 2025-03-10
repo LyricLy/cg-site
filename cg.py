@@ -1162,7 +1162,7 @@ def take_admin(num):
                 winner_idx = int.from_bytes(hashlib.sha256(str(num).encode()).digest(), "big") % (len(winners) or 1)
                 for idx, (so_called_winner,) in enumerate(winners):
                     if idx != winner_idx:
-                        db.execute("INSERT INTO Tiebreaks (round_num, player_id, new_rank) VALUES (?, ?, ?)", (num, so_called_winner, 2))
+                        db.execute("UPDATE Submissions SET rank_override = ? WHERE round_num = ? AND author_id = ?", (2, num, so_called_winner))
 
                 db.commit()
                 logging.info(f"{user_id} ended round {num}")
