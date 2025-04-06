@@ -444,8 +444,8 @@ def rank_enumerate(xs, *, key):
         yield (cur_idx, x)
 
 LANGUAGES = [
-    "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "rb", "st", "zig", "cpp", "go", "java", "kotlin", "groovy",
-    "d", "swift", "pl", "scm", "elisp", "raku", "apl", "bqn", "j", "k", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
+    "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "rb", "st", "zig", "cpp", "go", "c#", "java", "kotlin", "groovy",
+    "d", "swift", "pl", "php", "scm", "elisp", "raku", "apl", "bqn", "j", "k", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
     "nim", "nb", "forth", "factor", "elm", "vim", "sed", "nix", "tal", "sh", "matlab", "prolog",
     "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
 ]
