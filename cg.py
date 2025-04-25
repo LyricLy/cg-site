@@ -24,6 +24,7 @@ import requests
 import flask
 import flask_discord
 import yarl
+from werkzeug.middleware.proxy_fix import ProxyFix
 from oauthlib import oauth2
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
@@ -35,6 +36,7 @@ from db import connect
 
 
 logging.basicConfig(filename=config.log_file, encoding="utf-8", format="[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s", level=logging.INFO)
+
 app = flask.Flask(__name__, static_url_path="")
 app.secret_key = config.secret_key
 app.config |= {
@@ -43,6 +45,7 @@ app.config |= {
     "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
     "PERMANENT_SESSION_LIFETIME": datetime.timedelta(days=365 * 5),
 }
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
 discord = flask_discord.DiscordOAuth2Session(app, config.app_id, config.client_secret, config.canonical + "/callback")
 plugins = ["strikethrough", "table", "footnotes"]
 markdown = mistune.create_markdown(plugins=plugins)
