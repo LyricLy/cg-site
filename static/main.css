@@ -246,6 +246,7 @@ input[type="number"] {
     display: inline-block;
     background-repeat: no-repeat;
     position: relative;
+    z-index: auto;
     bottom: -1px;
 }
 
