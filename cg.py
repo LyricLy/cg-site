@@ -638,9 +638,13 @@ def show_round(num):
         case 3:
             entries = render_submissions(db, num, True)
             results = "<ol>"
-            for idx, author, total, plus, bonus, minus, won in score_round(num):
+            players = list(score_round(num))
+            for idx, author, total, plus, bonus, minus, won in players:
                 bonus_s = f" ~{bonus}"*(num in config.bonus_rounds)
-                crown = "👑 "*won
+                for symbol, cond in [("", True), ("👑 ", won), ("🅿️ ", plus == len(players)-1), ("Ⓜ️ ", not minus)]:
+                    if not cond:
+                        break
+                    crown = symbol
                 results += f'<li value="{idx}"><details><summary>{crown}<strong>{get_name(author)}</strong> +{plus}{bonus_s} -{minus} = {total}</summary><ol>'
                 for guess, actual, pos in db.execute(
                     "SELECT guess, actual, position FROM Guesses "
@@ -857,8 +861,7 @@ def stats():
 
     lb = defaultdict(lambda: [0]*7)
     for num, in rounds:
-        players = score_round(num)
-        for rank, player, total, plus, bonus, minus, won in players:
+        for rank, player, total, plus, bonus, minus, won in score_round(num):
             p = lb[player]
             for i, x in enumerate((total, plus, bonus, minus, 1, won)):
                 p[i] += x
