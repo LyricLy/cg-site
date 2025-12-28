@@ -187,7 +187,6 @@ def make_tar(num, compression=""):
             "INNER JOIN Rounds ON Rounds.num = Files.round_num "
             "WHERE Files.round_num = ? AND (stage <> 1 OR Files.author_id = ?)", (num, user_id)
         ):
-            print(name, lang)
             if url := external_url(lang):
                 content = requests.get(url).content
             info = tarfile.TarInfo(f"{num}/{position}/{name}")
