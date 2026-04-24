@@ -14,6 +14,7 @@ import json
 import logging
 import importlib
 from collections import defaultdict
+from urllib.parse import quote
 from pathlib import PurePosixPath
 
 import nh3
@@ -262,7 +263,7 @@ def is_admin(user_id):
 def pass_to_js(*args):
     s = ""
     for arg in args:
-        s += html.escape(json.dumps(arg), quote=True)
+        s += html.escape(json.dumps(arg))
         s += ","
     return s
 
@@ -551,7 +552,7 @@ def show_round(num):
             entry_count, = db.execute("SELECT COUNT(*) FROM Submissions WHERE round_num = ?", (num,)).fetchone()
             entries = f"<strong>{entry_count}</strong> entries have been received so far." if entry_count != 1 else "<strong>1</strong> entry has been received so far."
             submit_by = rnd['stage2_at']
-            meta_desc = html.escape(f"{get_summary(rnd['spec'])} submit by {submit_by.strftime('%B %d (%A)')}.", quote=True)
+            meta_desc = html.escape(f"{get_summary(rnd['spec'])} submit by {submit_by.strftime('%B %d (%A)')}.")
             return f"""
 <!DOCTYPE html>
 <html>
@@ -598,7 +599,7 @@ def show_round(num):
                         panel += f'<li data-id="me" class="player you locked finished" {events}>{name} (you!)</li>'
                     else:
                         lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
-                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}{" finished"*finished}" {events}><a style="color:unset" href="/stats/{name}">{name}</a> {lock_button}</li>'
+                        panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}{" finished"*finished}" {events}><a style="color:unset" href="/stats/{quote(name)}">{name}</a> {lock_button}</li>'
                 panel += "</ol></div>"
             else:
                 entries_header = '<h2>entries</h2>'
