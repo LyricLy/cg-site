@@ -596,7 +596,7 @@ def show_round(num):
                 for id, name, locked, finished in query:
                     events = 'onmousemove="setPlayerCursor(event)" onclick="clickPlayer(event)"'
                     if id == user_id:
-                        panel += f'<li data-id="me" class="player you locked finished" {events}>{name} (you!)</li>'
+                        panel += f'<li data-id="me" class="player you locked" {events}>{name} (you!)</li>'
                     else:
                         lock_button = f'<button title="lock guess in place" class="toggle lock-button" ontoggle="lock(this)" alt="🔒"{" togglevalue"*bool(locked)}>🔓</button>'
                         panel += f'<li data-id="{id}" class="player{" locked"*bool(locked)}{" finished"*finished}" {events}><a style="color:unset" href="/stats/{quote(name)}">{name}</a> {lock_button}</li>'

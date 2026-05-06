@@ -161,14 +161,16 @@ input[type="number"] {
     }
 }
 
-:has([alt="finish"]) + #players .finished::before {
-    content: "✔ ";
-    color: #68c23a;
+.player::before {
+    content: "🏁 ";
 }
 
-:has([alt="finish"]) + #players .player:not(.finished)::before {
-    content: "✘ ";
-    color: #c2433a;
+.player:not(.finished, .you)::before {
+    visibility: hidden;
+}
+
+h2:has([alt="unfinish"]) + #players .you::before {
+    visibility: hidden;
 }
 
 :target {
