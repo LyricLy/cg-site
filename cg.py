@@ -450,7 +450,7 @@ LANGUAGES = [
     "py", "c", "rs", "js", "ts", "bf", "hs", "lua", "rb", "st", "zig", "cpp", "go", "c#", "java", "kotlin", "groovy",
     "d", "swift", "pl", "php", "scm", "janet", "elisp", "raku", "apl", "bqn", "j", "k", "sml", "ocaml", "f#", "erlang", "dart", "pony", "ada",
     "nim", "nb", "forth", "factor", "elm", "vim", "tcl", "sed", "nix", "tal", "sh", "jl", "matlab", "prolog",
-    "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "image", "text", None
+    "md", "html", "css", "xml", "yaml", "toml", "json", "befunge", "sql", "image", "text", None
 ]
 ADMIN_LANGUAGES = [*LANGUAGES, "pdf", "archive"]
 META = f"""
