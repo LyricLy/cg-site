@@ -1191,7 +1191,9 @@ def take_admin(num):
                     if not key.startswith("nix-"):
                         continue
                     pos = int(key.removeprefix("nix-"))
-                    author, = db.execute("DELETE FROM Submissions WHERE round_num = ? AND position = ? RETURNING author_id", (num, pos)).fetchone()
+                    author, persona = db.execute("DELETE FROM Submissions WHERE round_num = ? AND position = ? RETURNING author_id, persona", (num, pos)).fetchone()
+                    if config.canon_url and persona:
+                        requests.delete(config.canon_url + f"/personas/{persona}")
 
                     subs = db.execute("SELECT * FROM Submissions WHERE round_num = ? ORDER BY position", (num,)).fetchall()
                     db.execute("UPDATE Submissions SET position = NULL WHERE round_num = ?", (num,))
