@@ -1106,6 +1106,9 @@ def backup(num):
     os.makedirs("backups", exist_ok=True)
     shutil.copy("the.db", f"backups/{num}.db")
 
+def submission_persona_name(idx):
+    return f"[{config.s}: author of #{idx}]"
+
 @app.route("/admin/<int:num>", methods=["POST"])
 def take_admin(num):
     db = get_db()
@@ -1146,7 +1149,7 @@ def take_admin(num):
                 for idx, sub in enumerate(subs, start=1):
                     author = sub["author_id"]
                     if config.canon_url:
-                        persona = requests.post(config.canon_url + f"/users/{author}/personas", json={"name": f"[{config.s}'s #{idx}]", "sudo": True, "temp": True}).json()["id"]
+                        persona = requests.post(config.canon_url + f"/users/{author}/personas", json={"name": submission_persona_name(idx), "sudo": True, "temp": True}).json()["id"]
                     else:
                         persona = None
                     db.execute("UPDATE Submissions SET position = ?, persona = ? WHERE round_num = ? AND author_id = ?", (idx, persona, sub["round_num"], author))
@@ -1194,7 +1197,7 @@ def take_admin(num):
                     db.execute("UPDATE Submissions SET position = NULL WHERE round_num = ?", (num,))
                     for idx, sub in enumerate(subs, start=1):
                         if config.canon_url and (persona := sub["persona"]):
-                            requests.patch(config.canon_url + f"/personas/{persona}", json={"name": f"[author of #{idx}]", "sudo": True})
+                            requests.patch(config.canon_url + f"/personas/{persona}", json={"name": submission_persona_name(idx), "sudo": True})
                         db.execute("UPDATE Submissions SET position = ? WHERE round_num = ? AND author_id = ?", (idx, sub["round_num"], sub["author_id"]))
 
                     flask.flash(f"disqualified {author} ({get_name(author)})")
